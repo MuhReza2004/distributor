@@ -112,7 +112,7 @@ const TabelProduk = forwardRef<TabelProdukRef, TabelProdukProps>(
         <CardHeader className="bg-gray-50 border-b">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-bold text-gray-800">
-              Daftar Produk
+              Daftar Penerimaan Barang
             </CardTitle>
             <span className="text-sm text-gray-600 bg-white px-3 py-1 rounded-full border">
               {produk.length} Produk
@@ -138,7 +138,7 @@ const TabelProduk = forwardRef<TabelProdukRef, TabelProdukProps>(
                 </svg>
               </div>
               <p className="text-gray-500 text-lg font-medium">
-                Belum ada produk
+                Belum ada Barang yang diterima
               </p>
               <p className="text-gray-400 text-sm mt-2">
                 Tambah produk baru untuk memulai

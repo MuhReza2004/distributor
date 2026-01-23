@@ -2,15 +2,18 @@
 
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import TabelProduk, { TabelProdukRef } from "@/components/produk/TabelProduk";
-import DialogTambahProduk from "@/components/produk/DialogTambahProduk";
-import DialogEditProduk from "@/components/produk/DialogEditProduk";
-import DialogHapusProduk from "@/components/produk/DialogHapusProduk";
-import DialogDetailProduk from "@/components/produk/DialogDetailProduct";
+
+import DialogTambahProduk from "@/components/PenerimaanBarang/DialogTambahProduk";
+import DialogEditProduk from "@/components/PenerimaanBarang/DialogEditProduk";
+import DialogHapusProduk from "@/components/PenerimaanBarang/DialogHapusProduk";
+import DialogDetailProduk from "@/components/PenerimaanBarang/DialogDetailProduct";
 import { Produk, ProdukFormData } from "@/app/types/produk";
 import { Supplier } from "@/app/types/suplyer";
 import { getAllSuppliers } from "@/app/services/supplyer.service";
 import { Plus } from "lucide-react";
+import TabelProduk, {
+  TabelProdukRef,
+} from "@/components/PenerimaanBarang/TabelPenerimaan";
 
 export default function barangPage() {
   const [dialogTambahOpen, setDialogTambahOpen] = useState(false);
@@ -56,8 +59,7 @@ export default function barangPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold mb-2">Dashboard Barang</h2>
-          <p>Kelola data barang Anda di sini 📋</p>
+          <h2 className="text-2xl font-bold mb-2"> Penerimaan Barang</h2>
         </div>
         <Button onClick={() => setDialogTambahOpen(true)}>
           <Plus className="size-4" />
