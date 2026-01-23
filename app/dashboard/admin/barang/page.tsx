@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -6,20 +6,40 @@ import TabelProduk, { TabelProdukRef } from "@/components/produk/TabelProduk";
 import DialogTambahProduk from "@/components/produk/DialogTambahProduk";
 import DialogEditProduk from "@/components/produk/DialogEditProduk";
 import DialogHapusProduk from "@/components/produk/DialogHapusProduk";
-import { Produk } from "@/app/types/produk";
+import DialogDetailProduk from "@/components/produk/DialogDetailProduct";
+import { Produk, ProdukFormData } from "@/app/types/produk";
+import { Supplier } from "@/app/types/suplyer";
+import { getAllSuppliers } from "@/app/services/supplyer.service";
 import { Plus } from "lucide-react";
 
 export default function barangPage() {
   const [dialogTambahOpen, setDialogTambahOpen] = useState(false);
   const [dialogEditOpen, setDialogEditOpen] = useState(false);
   const [dialogHapusOpen, setDialogHapusOpen] = useState(false);
+  const [dialogDetailOpen, setDialogDetailOpen] = useState(false);
   const [selectedProduk, setSelectedProduk] = useState<Produk | null>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
+    null,
+  );
   const tabelProdukRef = useRef<TabelProdukRef>(null);
 
   const handleSuccess = () => {
     if (tabelProdukRef.current) {
       tabelProdukRef.current.refresh();
     }
+  };
+
+  const handleView = async (produk: Produk) => {
+    setSelectedProduk(produk);
+    // Fetch supplier berdasarkan nama supplier dari produk
+    try {
+      const suppliers = await getAllSuppliers();
+      const supplier = suppliers.find((s) => s.name === produk.supplyerName);
+      setSelectedSupplier(supplier || null);
+    } catch (error) {
+      console.error("Error fetching supplier:", error);
+    }
+    setDialogDetailOpen(true);
   };
 
   const handleEdit = (produk: Produk) => {
@@ -45,8 +65,9 @@ export default function barangPage() {
         </Button>
       </div>
 
-      <TabelProduk 
+      <TabelProduk
         ref={tabelProdukRef}
+        onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
@@ -55,6 +76,13 @@ export default function barangPage() {
         open={dialogTambahOpen}
         onOpenChange={setDialogTambahOpen}
         onSuccess={handleSuccess}
+      />
+
+      <DialogDetailProduk
+        open={dialogDetailOpen}
+        onOpenChange={setDialogDetailOpen}
+        produk={selectedProduk}
+        supplier={selectedSupplier}
       />
 
       <DialogEditProduk

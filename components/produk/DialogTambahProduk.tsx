@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addProduk } from "@/app/services/produk.service";
+import { getAllSuppliers } from "@/app/services/supplyer.service";
 import { ProdukFormData } from "@/app/types/produk";
+import { Supplier } from "@/app/types/suplyer";
 import { formatRupiah } from "@/helper/format";
 
 interface Props {
@@ -28,6 +30,10 @@ export default function DialogTambahProduk({
   onSuccess,
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
+    null,
+  );
   const [formData, setFormData] = useState<ProdukFormData>({
     supplyerName: "",
     dateReceived: "",
@@ -38,9 +44,16 @@ export default function DialogTambahProduk({
     name: "",
     unit: "dus",
     buyPrice: 0,
-    sellPrice: 0,
     stock: 0,
   });
+
+  useEffect(() => {
+    const loadSuppliers = async () => {
+      const data = await getAllSuppliers();
+      setSuppliers(data);
+    };
+    loadSuppliers();
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -54,9 +67,9 @@ export default function DialogTambahProduk({
         name: "",
         unit: "dus",
         buyPrice: 0,
-        sellPrice: 0,
         stock: 0,
       });
+      setSelectedSupplier(null);
     }
   }, [open]);
 
@@ -64,6 +77,26 @@ export default function DialogTambahProduk({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value, type } = e.target;
+
+    if (name === "supplyerName") {
+      const supplier = suppliers.find((s) => s.name === value);
+      setSelectedSupplier(supplier || null);
+      setFormData((p) => ({
+        ...p,
+        supplyerName: value,
+        name: "", // Reset nama produk ketika supplier berubah
+      }));
+      return;
+    }
+
+    if (name === "name") {
+      // Ketika produk dipilih dari dropdown
+      setFormData((p) => ({
+        ...p,
+        name: value,
+      }));
+      return;
+    }
 
     if (name === "buyPrice" || name === "sellPrice") {
       const numeric = value.replace(/\D/g, "");
@@ -117,14 +150,20 @@ export default function DialogTambahProduk({
                 <Label className="text-sm font-medium text-gray-700">
                   Nama Supplier <span className="text-red-500">*</span>
                 </Label>
-                <Input
+                <select
                   name="supplyerName"
                   value={formData.supplyerName}
-                  placeholder="Masukkan nama supplier"
                   onChange={handleChange}
                   required
-                  className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
-                />
+                  className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">-- Pilih Supplier --</option>
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.name}>
+                      {supplier.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -213,14 +252,32 @@ export default function DialogTambahProduk({
                 <Label className="text-sm font-medium text-gray-700">
                   Nama Produk <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  name="name"
-                  value={formData.name}
-                  placeholder="Masukkan nama produk"
-                  onChange={handleChange}
-                  required
-                  className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md"
-                />
+                {selectedSupplier && selectedSupplier.products.length > 0 ? (
+                  <select
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:border-green-500 focus:ring-green-500 bg-white"
+                  >
+                    <option value="">-- Pilih Produk --</option>
+                    {selectedSupplier.products.map((product) => (
+                      <option key={product.productId} value={product.name}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input
+                    name="name"
+                    value={formData.name}
+                    placeholder="Pilih supplier terlebih dahulu"
+                    onChange={handleChange}
+                    required
+                    className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md bg-gray-50"
+                    disabled
+                  />
+                )}
               </div>
 
               <div>
@@ -253,6 +310,7 @@ export default function DialogTambahProduk({
                   <option value="pcs">Pcs</option>
                   <option value="kg">Kg</option>
                   <option value="liter">Liter</option>
+                  <option value="sak">Sak</option>
                 </select>
               </div>
             </div>
@@ -269,7 +327,7 @@ export default function DialogTambahProduk({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium text-gray-700">
-                  Harga Beli <span className="text-red-500">*</span>
+                  Harga Beli Satuan <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   name="buyPrice"
@@ -283,46 +341,6 @@ export default function DialogTambahProduk({
                   Harga pembelian dari supplier
                 </p>
               </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  Harga Jual <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  name="sellPrice"
-                  value={formatRupiah(formData.sellPrice)}
-                  placeholder="Rp 0"
-                  onChange={handleChange}
-                  required
-                  className="mt-1 border-gray-300 focus:border-amber-500 focus:ring-amber-500 rounded-md"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Harga jual ke customer
-                </p>
-              </div>
-
-              {/* Margin Keuntungan */}
-              {formData.buyPrice > 0 && formData.sellPrice > 0 && (
-                <div className="md:col-span-2 bg-white p-3 rounded-md border border-amber-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700">
-                      Margin Keuntungan:
-                    </span>
-                    <span className="text-lg font-bold text-green-600">
-                      {formatRupiah(formData.sellPrice - formData.buyPrice)}
-                      <span className="text-sm text-gray-500 ml-2">
-                        (
-                        {(
-                          ((formData.sellPrice - formData.buyPrice) /
-                            formData.buyPrice) *
-                          100
-                        ).toFixed(1)}
-                        %)
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 

@@ -159,7 +159,10 @@ const TabelProduk = forwardRef<TabelProdukRef, TabelProdukProps>(
                       Harga Beli
                     </th>
                     <th className="text-center p-4 font-semibold text-gray-700 text-sm uppercase tracking-wider">
-                      Stok
+                      jumlah Barang
+                    </th>
+                    <th className="text-center p-4 font-semibold text-gray-700 text-sm uppercase tracking-wider">
+                      jumlah harga
                     </th>
                     <th className="text-center p-4 font-semibold text-gray-700 text-sm uppercase tracking-wider">
                       Aksi
@@ -190,9 +193,6 @@ const TabelProduk = forwardRef<TabelProdukRef, TabelProdukProps>(
                           <p className="font-semibold text-gray-900">
                             {formatCurrency(item.buyPrice)}
                           </p>
-                          {/* <p className="text-xs text-gray-500 mt-1">
-                            Beli: {formatCurrency(item.buyPrice)}
-                          </p> */}
                         </div>
                       </td>
                       <td className="p-4 text-center">
@@ -207,6 +207,13 @@ const TabelProduk = forwardRef<TabelProdukRef, TabelProdukProps>(
                           >
                             {getStockLabel(item.stock)}
                           </span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {formatCurrency(item.buyPrice * item.stock)}
+                          </p>
                         </div>
                       </td>
                       <td className="p-4">
@@ -276,7 +283,7 @@ const TabelProduk = forwardRef<TabelProdukRef, TabelProdukProps>(
                 </span>
               </div>
               <span className="text-gray-600">
-                Total Nilai Stok:{" "}
+                Total Nilai Barang:{" "}
                 <span className="font-semibold text-gray-900">
                   {formatCurrency(
                     produk.reduce((sum, p) => sum + p.buyPrice * p.stock, 0),

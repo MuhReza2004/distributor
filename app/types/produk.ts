@@ -8,7 +8,6 @@ export interface ProdukFormData {
   name: string; // Nama produk
   unit: string; // Satuan (dus, pcs, kg, liter)
   buyPrice: number; // Harga beli
-  sellPrice: number; // Harga jual
   stock: number; // Jumlah / stok
 }
 

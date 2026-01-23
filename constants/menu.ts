@@ -14,7 +14,17 @@ export const dashboardMenus: MenuItem[] = [
     roles: ["admin"],
   },
   {
-    label: "Manajemen Produk",
+    label: "Supplyer",
+    href: "/dashboard/admin/supplyer",
+    roles: ["admin"],
+  },
+  // {
+  //   label: "Penerimaan Barang",
+  //   href: "/dashboard/admin/penerimaanBarang",
+  //   roles: ["admin"],
+  // },
+  {
+    label: "Penerimaan Barang",
     href: "/dashboard/admin/barang",
     roles: ["admin"],
   },
