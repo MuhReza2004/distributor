@@ -50,7 +50,7 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="grid grid-cols-3 gap-4 p-4 rounded-lg bg-gray-50 border">
+          <div className="grid grid-cols-4 gap-4 p-4 rounded-lg bg-gray-50 border">
             <div>
               <p className="text-sm text-gray-500">Pelanggan</p>
               <p className="font-semibold">{penjualan.namaPelanggan}</p>
@@ -59,17 +59,29 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
               <p className="text-sm text-gray-500">Tanggal</p>
               <p className="font-semibold">
                 {new Date(penjualan.tanggal).toLocaleDateString("id-ID", {
-                  day: 'numeric', month: 'long', year: 'numeric'
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
                 })}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Status</p>
               <Badge
-                className={penjualan.status === 'lunas' ? 'bg-green-500' : 'bg-red-500'}
+                className={
+                  penjualan.status === "Lunas"
+                    ? "bg-green-500 text-white"
+                    : "bg-red-500 text-white"
+                }
               >
                 {penjualan.status}
               </Badge>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Metode Pembayaran</p>
+              <p className="font-semibold capitalize">
+                {penjualan.metodePembayaran}
+              </p>
             </div>
           </div>
 
@@ -81,6 +93,7 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
                   <TableRow>
                     <TableHead>Produk</TableHead>
                     <TableHead className="text-center">Qty</TableHead>
+                    <TableHead className="text-center">Satuan</TableHead>
                     <TableHead className="text-right">Harga</TableHead>
                     <TableHead className="text-right">Subtotal</TableHead>
                   </TableRow>
@@ -90,6 +103,9 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
                     <TableRow key={index}>
                       <TableCell>{item.namaProduk}</TableCell>
                       <TableCell className="text-center">{item.qty}</TableCell>
+                      <TableCell className="text-center">
+                        {item.satuan}
+                      </TableCell>
                       <TableCell className="text-right">
                         {formatRupiah(item.hargaJual)}
                       </TableCell>
@@ -102,12 +118,14 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
               </Table>
             </div>
           </div>
-          
+
           <div className="flex justify-end items-center pt-4 border-t">
-              <div className="text-right">
-                <p className="text-lg font-semibold">Total Pembayaran</p>
-                <p className="text-2xl font-bold text-blue-600">{formatRupiah(penjualan.total)}</p>
-              </div>
+            <div className="text-right">
+              <p className="text-lg font-semibold">Total Pembayaran</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {formatRupiah(penjualan.total)}
+              </p>
+            </div>
           </div>
         </div>
 

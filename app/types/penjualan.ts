@@ -1,6 +1,7 @@
 export interface PenjualanItem {
   produkId: string;
   namaProduk: string;
+  satuan: string;
   hargaJual: number;
   qty: number;
   subtotal: number;
@@ -14,6 +15,7 @@ export interface Penjualan {
   tanggal: string;
   items: PenjualanItem[];
   total: number;
-  status: "lunas" | "belum lunas";
+  status: "Lunas" | "Belum Lunas";
+  metodePembayaran: "Tunai" | "Transfer";
   createdAt: Date;
 }

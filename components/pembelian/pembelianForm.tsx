@@ -222,12 +222,12 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
               onChange={(e) => setNomorKontrak(e.target.value)}
             />
             <Input
-              placeholder="Nomor Pembelian (NPB)"
+              placeholder="Nomor Peneriaman Barang (NPB)"
               value={npb}
               onChange={(e) => setNpb(e.target.value)}
             />
             <Input
-              placeholder="Nomor Delivery Order (Nomor DO)"
+              placeholder="Nomor Delivery Order (DO)"
               value={nomorDO}
               onChange={(e) => setNomorDO(e.target.value)}
             />

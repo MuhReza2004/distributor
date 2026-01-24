@@ -56,26 +56,34 @@ export const getAllPenjualan = async (): Promise<Penjualan[]> => {
   })) as Penjualan[];
 };
 
-export const generateInvoiceNumber = async (): Promise<string> => {
-    const counterRef = doc(db, "counters", "penjualan");
-  
-    const next = await runTransaction(db, async (tx) => {
-      const snap = await tx.get(counterRef);
-  
-      if (!snap.exists()) {
-        tx.set(counterRef, { lastNumber: 1 });
-        return 1;
-      }
-  
-      const nextNumber = snap.data().lastNumber + 1;
-      tx.update(counterRef, { lastNumber: nextNumber });
-      return nextNumber;
-    });
-  
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+export const updatePenjualanStatus = async (
+  id: string,
+  status: "Lunas" | "Belum Lunas",
+): Promise<void> => {
+  const penjualanRef = doc(db, "penjualan", id);
+  await updateDoc(penjualanRef, { status });
+};
 
-    return `INV/${year}${month}${day}/${String(next).padStart(4, "0")}`;
-  };
+export const generateInvoiceNumber = async (): Promise<string> => {
+  const counterRef = doc(db, "counters", "penjualan");
+
+  const next = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef);
+
+    if (!snap.exists()) {
+      tx.set(counterRef, { lastNumber: 1 });
+      return 1;
+    }
+
+    const nextNumber = snap.data().lastNumber + 1;
+    tx.update(counterRef, { lastNumber: nextNumber });
+    return nextNumber;
+  });
+
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `INV/${year}${month}${day}/${String(next).padStart(4, "0")}`;
+};

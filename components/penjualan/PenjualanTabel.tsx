@@ -20,6 +20,7 @@ interface PenjualanTabelProps {
   isLoading: boolean;
   error: string | null;
   onViewDetails: (penjualan: Penjualan) => void;
+  onUpdateStatus: (id: string, status: "Lunas" | "Belum Lunas") => void;
 }
 
 export default function PenjualanTabel({
@@ -27,6 +28,7 @@ export default function PenjualanTabel({
   isLoading,
   error,
   onViewDetails,
+  onUpdateStatus,
 }: PenjualanTabelProps) {
   if (isLoading) {
     return (
@@ -82,28 +84,40 @@ export default function PenjualanTabel({
                 {formatRupiah(penjualan.total)}
               </TableCell>
 
-              {/* ✅ FIX BADGE */}
+              {/* === STATUS BADGE (DIPERBAIKI) === */}
               <TableCell className="text-center">
                 <Badge
                   className={
-                    penjualan.status === "lunas"
+                    penjualan.status === "Lunas"
                       ? "bg-green-600 text-white hover:bg-green-700"
                       : "bg-red-600 text-white hover:bg-red-700"
                   }
                 >
-                  {penjualan.status.toUpperCase()}
+                  {penjualan.status}
                 </Badge>
               </TableCell>
 
+              {/* === AKSI (DIPERBAIKI) === */}
               <TableCell className="text-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onViewDetails(penjualan)}
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Detail
-                </Button>
+                <div className="flex justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onViewDetails(penjualan)}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+
+                  {penjualan.status === "Belum Lunas" && (
+                    <Button
+                      size="sm"
+                      onClick={() => onUpdateStatus(penjualan.id!, "Lunas")}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      Tandai Lunas
+                    </Button>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}
