@@ -105,7 +105,7 @@ export const getAllProduk = async (): Promise<Produk[]> => {
   const snap = await getDocs(q);
 
   return snap.docs.map((d) => ({
-    idProduk: d.id,
+    id: d.id,
     ...d.data(),
     createdAt: d.data().createdAt?.toDate(),
     updatedAt: d.data().updatedAt?.toDate(),
@@ -117,7 +117,7 @@ export const getProdukById = async (id: string): Promise<Produk | null> => {
   if (!snap.exists()) return null;
 
   return {
-    idProduk: snap.id,
+    id: snap.id,
     ...snap.data(),
     createdAt: snap.data().createdAt?.toDate(),
     updatedAt: snap.data().updatedAt?.toDate(),

@@ -13,6 +13,7 @@ export interface ProdukFormData {
 }
 
 export interface Produk extends ProdukFormData {
+  id: string;
   idProduk: string;
   createdAt?: Date;
   updatedAt?: Date;

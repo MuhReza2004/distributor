@@ -7,9 +7,10 @@ import {
   getDocs,
   getDoc,
   serverTimestamp,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
-import { Supplier, SupplierFormData } from "@/app/types/suplyer";
+import { Supplier, SupplierFormData, SupplierProduct } from "@/app/types/suplyer";
 
 /* ======================
    CREATE
@@ -46,7 +47,7 @@ export const getSupplierById = async (id: string): Promise<Supplier | null> => {
     id: snap.id,
     ...(snap.data() as SupplierFormData),
     createdAt: snap.data().createdAt?.toDate(),
-    updatedAt: snap.data().updatedAt?.toDate(),
+    updatedAt: doc.data().updatedAt?.toDate(),
   };
 };
 
@@ -55,11 +56,21 @@ export const getSupplierById = async (id: string): Promise<Supplier | null> => {
 ====================== */
 export const updateSupplier = async (
   id: string,
-  data: SupplierFormData,
+  data: Partial<SupplierFormData>,
 ): Promise<void> => {
   await updateDoc(doc(db, "suppliers", id), {
     ...data,
     updatedAt: serverTimestamp(),
+  });
+};
+
+export const addProductToSupplier = async (
+  supplierId: string,
+  product: SupplierProduct,
+): Promise<void> => {
+  const supplierRef = doc(db, "suppliers", supplierId);
+  await updateDoc(supplierRef, {
+    products: arrayUnion(product),
   });
 };
 
