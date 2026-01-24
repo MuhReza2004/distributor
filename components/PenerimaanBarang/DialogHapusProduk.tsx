@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -38,12 +38,12 @@ export default function DialogHapusProduk({
 
     try {
       await deleteProduk(produk.id);
-      
+
       // Callback untuk refresh tabel
       if (onSuccess) {
         onSuccess();
       }
-      
+
       onOpenChange(false);
     } catch (err: any) {
       console.error("Error deleting produk:", err);
@@ -78,16 +78,14 @@ export default function DialogHapusProduk({
             </div>
           </div>
         </DialogHeader>
-        
+
         <div className="py-4">
           <p className="text-sm text-muted-foreground mb-2">
             Apakah Anda yakin ingin menghapus produk berikut?
           </p>
           <div className="bg-muted p-3 rounded-md">
             <p className="font-semibold">{produk.name}</p>
-            <p className="text-sm text-muted-foreground">
-              Kode: {produk.code} | Kategori: {produk.category}
-            </p>
+            <p className="text-sm text-muted-foreground">Kode: {produk.code}</p>
           </div>
         </div>
 
