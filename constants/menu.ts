@@ -4,6 +4,7 @@ export interface MenuItem {
   label: string;
   href: string;
   roles: UserRole[];
+  children?: MenuItem[];
 }
 
 export const dashboardMenus: MenuItem[] = [
@@ -32,6 +33,23 @@ export const dashboardMenus: MenuItem[] = [
     label: "Inventory/stok",
     href: "/dashboard/admin/inventory",
     roles: ["admin"],
+  },
+  {
+    label: "Transaksi",
+    href: "/dashboard/admin/transaksi",
+    roles: ["admin"],
+    children: [
+      {
+        label: "Pembelian",
+        href: "/dashboard/admin/transaksi/pembelian",
+        roles: ["admin"],
+      },
+      {
+        label: "Penjualan",
+        href: "/dashboard/admin/transaksi/penjualan",
+        roles: ["admin"],
+      },
+    ],
   },
   // {
   //   label: "Penjualan",
