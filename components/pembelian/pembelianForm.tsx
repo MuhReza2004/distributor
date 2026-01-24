@@ -246,7 +246,7 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
                   <SelectContent>
                     {produkList.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.nameProduk}
+                        {p.nameProduk} {p.stok ? ` (Stok: ${p.stok})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
