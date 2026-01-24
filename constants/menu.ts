@@ -24,21 +24,21 @@ export const dashboardMenus: MenuItem[] = [
     roles: ["admin"],
   },
   {
-    label: "Penerimaan Barang",
-    href: "/dashboard/admin/penerimaanBarang",
+    label: "produk",
+    href: "/dashboard/admin/produk",
     roles: ["admin"],
   },
-  {
-    label: "Penjualan",
-    href: "/dashboard/admin/orders",
-    roles: ["admin"],
-  },
+  // {
+  //   label: "Penjualan",
+  //   href: "/dashboard/admin/orders",
+  //   roles: ["admin"],
+  // },
 
-  {
-    label: "Invoice",
-    href: "/dashboard/admin/invoice",
-    roles: ["admin"],
-  },
+  // {
+  //   label: "Invoice",
+  //   href: "/dashboard/admin/invoice",
+  //   roles: ["admin"],
+  // },
 
   // STAFF
   {

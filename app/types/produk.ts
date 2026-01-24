@@ -1,14 +1,8 @@
 export interface ProdukFormData {
-  supplyerName: string; // Nama supplyer
-  dateReceived: string; // Tanggal diterima
-  contractNumber: string; // Nomor kontrak
-  invoiceNumber: string; // Nomor faktur
-  warehouseOrigin: string; // Asal gudang
-  npb: string; // NPB
   name: string; // Nama produk
   unit: string; // Satuan (dus, pcs, kg, liter)
   buyPrice: number; // Harga beli
-  stock: number; // Jumlah / stok
+  sellPrice: number; // Harga jual
 }
 
 export interface Produk extends ProdukFormData {
