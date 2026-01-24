@@ -10,6 +10,7 @@ export interface PelangganFormData {
 }
 
 export interface Pelanggan extends PelangganFormData {
+  id: string;
   idPelanggan: string;
   createdAt?: Date;
   updatedAt?: Date;

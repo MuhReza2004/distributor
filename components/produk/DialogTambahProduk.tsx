@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProdukFormData } from "@/app/types/produk";
 import { getNewKodeProduk } from "@/app/services/produk.service";
+import { formatRupiah } from "@/helper/format";
 
 interface DialogTambahProdukProps {
   open: boolean;
@@ -22,6 +23,19 @@ interface DialogTambahProdukProps {
   onSubmit: (data: ProdukFormData) => Promise<void>;
   isLoading?: boolean;
 }
+
+const KATEGORI_OPTIONS = [
+  { value: "Sembako", label: "Sembako" },
+  { value: "lainnya", label: "Lainnya" },
+];
+
+const SATUAN_OPTIONS = [
+  { value: "Sak", label: "Sak" },
+  { value: "Pcs", label: "Pcs" },
+  { value: "Kg", label: "Kg" },
+  { value: "Liter", label: "Liter" },
+  { value: "Dus", label: "Dus" },
+];
 
 export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
   open,
@@ -34,13 +48,14 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
     handleSubmit,
     reset,
     setValue,
+    control,
     formState: { errors },
   } = useForm<ProdukFormData>({
     defaultValues: {
       nameProduk: "",
       kodeProduk: "",
-      kategori: "",
-      satuan: "",
+      kategori: "lainnya",
+      satuan: "pcs",
       hargaBeli: 0,
       hargaJual: 0,
       stok: 0,
@@ -60,17 +75,14 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
         }
       };
       generateKode();
+      reset(); // Reset form on open
     }
-  }, [open, setValue]);
+  }, [open, setValue, reset]);
 
   const onSubmitForm = async (data: ProdukFormData) => {
     await onSubmit(data);
     reset();
   };
-
-  useEffect(() => {
-    if (!open) reset();
-  }, [open, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -78,8 +90,7 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
         <DialogHeader>
           <DialogTitle>Tambah Produk Baru</DialogTitle>
           <DialogDescription>
-            Isi informasi produk di bawah ini. Kode Produk akan dibuat
-            otomatis.
+            Isi informasi produk di bawah ini. Kode Produk akan dibuat otomatis.
           </DialogDescription>
         </DialogHeader>
 
@@ -123,12 +134,19 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
               <Label htmlFor="kategori" className="font-semibold">
                 Kategori *
               </Label>
-              <Input
+              <select
                 id="kategori"
-                placeholder="Misal: Makanan"
-                {...register("kategori", { required: "Kategori wajib diisi" })}
-                className={errors.kategori ? "border-red-500" : ""}
-              />
+                {...register("kategori", {
+                  required: "Kategori wajib dipilih",
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {KATEGORI_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
               {errors.kategori && (
                 <p className="text-sm text-red-500">
                   {errors.kategori.message}
@@ -140,16 +158,19 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
               <Label htmlFor="satuan" className="font-semibold">
                 Satuan *
               </Label>
-              <Input
+              <select
                 id="satuan"
-                placeholder="Misal: pcs, kg, liter"
-                {...register("satuan", { required: "Satuan wajib diisi" })}
-                className={errors.satuan ? "border-red-500" : ""}
-              />
+                {...register("satuan", { required: "Satuan wajib dipilih" })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {SATUAN_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
               {errors.satuan && (
-                <p className="text-sm text-red-500">
-                  {errors.satuan.message}
-                </p>
+                <p className="text-sm text-red-500">{errors.satuan.message}</p>
               )}
             </div>
           </div>
@@ -159,15 +180,26 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
               <Label htmlFor="hargaBeli" className="font-semibold">
                 Harga Beli *
               </Label>
-              <Input
-                id="hargaBeli"
-                type="number"
-                placeholder="0"
-                {...register("hargaBeli", {
+              <Controller
+                control={control}
+                name="hargaBeli"
+                rules={{
                   required: "Harga beli wajib diisi",
-                  valueAsNumber: true,
-                })}
-                className={errors.hargaBeli ? "border-red-500" : ""}
+                  min: { value: 1, message: "Harga tidak boleh nol" },
+                }}
+                render={({ field }) => (
+                  <Input
+                    id="hargaBeli"
+                    inputMode="numeric"
+                    placeholder="Rp 0"
+                    value={field.value ? formatRupiah(field.value) : ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, "");
+                      field.onChange(Number(raw));
+                    }}
+                    className={errors.hargaBeli ? "border-red-500" : ""}
+                  />
+                )}
               />
               {errors.hargaBeli && (
                 <p className="text-sm text-red-500">
@@ -180,15 +212,26 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
               <Label htmlFor="hargaJual" className="font-semibold">
                 Harga Jual *
               </Label>
-              <Input
-                id="hargaJual"
-                type="number"
-                placeholder="0"
-                {...register("hargaJual", {
+              <Controller
+                control={control}
+                name="hargaJual"
+                rules={{
                   required: "Harga jual wajib diisi",
-                  valueAsNumber: true,
-                })}
-                className={errors.hargaJual ? "border-red-500" : ""}
+                  min: { value: 1, message: "Harga tidak boleh nol" },
+                }}
+                render={({ field }) => (
+                  <Input
+                    id="hargaJual"
+                    inputMode="numeric"
+                    placeholder="Rp 0"
+                    value={field.value ? formatRupiah(field.value) : ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, "");
+                      field.onChange(Number(raw));
+                    }}
+                    className={errors.hargaJual ? "border-red-500" : ""}
+                  />
+                )}
               />
               {errors.hargaJual && (
                 <p className="text-sm text-red-500">
@@ -199,7 +242,7 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-2">
+            <div className="space-y-2">
               <Label htmlFor="stok" className="font-semibold">
                 Stok Awal *
               </Label>
@@ -215,9 +258,7 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
                 className={errors.stok ? "border-red-500" : ""}
               />
               {errors.stok && (
-                <p className="text-sm text-red-500">
-                  {errors.stok.message}
-                </p>
+                <p className="text-sm text-red-500">{errors.stok.message}</p>
               )}
             </div>
             <div className="space-y-2">

@@ -84,7 +84,7 @@ export const getAllPelanggan = async (): Promise<Pelanggan[]> => {
   const snap = await getDocs(q);
 
   return snap.docs.map((d) => ({
-    idPelanggan: d.id,
+    id: d.id,
     ...d.data(),
     createdAt: d.data().createdAt?.toDate(),
     updatedAt: d.data().updatedAt?.toDate(),
@@ -98,7 +98,7 @@ export const getPelangganById = async (
   if (!snap.exists()) return null;
 
   return {
-    idPelanggan: snap.id,
+    id: snap.id,
     ...snap.data(),
     createdAt: snap.data().createdAt?.toDate(),
     updatedAt: snap.data().updatedAt?.toDate(),

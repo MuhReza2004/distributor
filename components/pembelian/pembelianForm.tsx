@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPembelian } from "@/app/services/pembelian.service";
 import { PembelianItem } from "@/app/types/pembelian";
-import { addProduk, getAllProduk } from "@/app/services/produk.service";
+import { addProduk } from "@/app/services/produk.service";
 import {
   addProductToSupplier,
   getAllSuppliers,
@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DialogTambahProduk } from "../produk/DialogTambahProduk";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { db } from "@/app/lib/firebase";
 
 interface PembelianFormProps {
   onSuccess?: () => void;
@@ -39,13 +41,35 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
   const [isTambahProdukOpen, setIsTambahProdukOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadData = async () => {
-    getAllProduk().then(setProdukList);
-    getAllSuppliers().then(setSupplierList);
-  };
-
   useEffect(() => {
-    loadData();
+    const qProduk = query(
+      collection(db, "produk"),
+      orderBy("nameProduk", "asc"),
+    );
+    const unsubscribeProduk = onSnapshot(qProduk, (snapshot) => {
+      const prods = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Produk[];
+      setProdukList(prods);
+    });
+
+    const qSupplier = query(
+      collection(db, "suppliers"),
+      orderBy("name", "asc"),
+    );
+    const unsubscribeSupplier = onSnapshot(qSupplier, (snapshot) => {
+      const sups = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Supplier[];
+      setSupplierList(sups);
+    });
+
+    return () => {
+      unsubscribeProduk();
+      unsubscribeSupplier();
+    };
   }, []);
 
   const addItem = () => {
@@ -94,8 +118,8 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
       return;
     }
     if (!nomorKontrak) {
-        alert("Nomor Kontrak harus diisi");
-        return;
+      alert("Nomor Kontrak harus diisi");
+      return;
     }
     if (items.some((item) => !item.produkId || !item.qty)) {
       alert("Pastikan semua produk dan kuantitas terisi");
@@ -139,10 +163,6 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
         productId: newProdukId,
         name: data.nameProduk,
       });
-
-      // Refresh product list
-      const updatedProdukList = await getAllProduk();
-      setProdukList(updatedProdukList);
 
       alert("Produk baru berhasil ditambahkan!");
       setIsTambahProdukOpen(false);
@@ -197,6 +217,11 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
 
           <div className="grid grid-cols-3 gap-4">
             <Input
+              placeholder="Nomor Kontrak"
+              value={nomorKontrak}
+              onChange={(e) => setNomorKontrak(e.target.value)}
+            />
+            <Input
               placeholder="Nomor Pembelian (NPB)"
               value={npb}
               onChange={(e) => setNpb(e.target.value)}
@@ -205,11 +230,6 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
               placeholder="Nomor Delivery Order (Nomor DO)"
               value={nomorDO}
               onChange={(e) => setNomorDO(e.target.value)}
-            />
-            <Input
-              placeholder="Nomor Kontrak"
-              value={nomorKontrak}
-              onChange={(e) => setNomorKontrak(e.target.value)}
             />
           </div>
 

@@ -31,6 +31,16 @@ const SATUAN_OPTIONS = [
   { value: "liter", label: "Liter" },
 ];
 
+const KATEGORI_OPTIONS = [
+    { value: "semen", label: "Semen" },
+    { value: "pasir", label: "Pasir" },
+    { value: "bata", label: "Bata" },
+    { value: "besi", label: "Besi" },
+    { value: "cat", label: "Cat" },
+    { value: "pipa", label: "Pipa" },
+    { value: "lainnya", label: "Lainnya" },
+];
+
 export const DialogEditProduk: React.FC<DialogEditProdukProps> = ({
   open,
   onOpenChange,
@@ -111,8 +121,29 @@ export const DialogEditProduk: React.FC<DialogEditProdukProps> = ({
                 </p>
               )}
             </div>
-
-            <div className="space-y-2">
+               <div className="space-y-2">
+              <Label htmlFor="kategori" className="font-semibold">
+                Kategori *
+              </Label>
+              <select
+                id="kategori"
+                {...register("kategori", { required: "Kategori wajib dipilih" })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {KATEGORI_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {errors.kategori && (
+                <p className="text-sm text-red-500">
+                  {errors.kategori.message}
+                </p>
+              )}
+            </div>
+          </div>
+           <div className="space-y-2">
               <Label htmlFor="kodeProduk" className="font-semibold">
                 Kode Produk (SKU)
               </Label>
@@ -125,7 +156,6 @@ export const DialogEditProduk: React.FC<DialogEditProdukProps> = ({
               />
               <p className="text-xs text-gray-500">Kode tidak dapat diubah</p>
             </div>
-          </div>
 
           {/* Row 2: Satuan & Status */}
           <div className="grid grid-cols-2 gap-4">

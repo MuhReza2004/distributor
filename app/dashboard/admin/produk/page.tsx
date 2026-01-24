@@ -9,13 +9,14 @@ import { DialogHapusProduk } from "@/components/produk/DialogHapusProduk";
 import { DialogProdukDuplikat } from "@/components/produk/DialogProdukDuplikat";
 import { TabelProdukNew } from "@/components/produk/TabelProduk";
 import {
-  getAllProduk,
   addProduk,
   updateProduk,
   deleteProduk,
 } from "@/app/services/produk.service";
 import { Produk, ProdukFormData } from "@/app/types/produk";
 import { Plus, Search } from "lucide-react";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { db } from "@/app/lib/firebase";
 
 export default function ProdukAdminPage() {
   const [products, setProducts] = useState<Produk[]>([]);
@@ -41,23 +42,29 @@ export default function ProdukAdminPage() {
   // Filter & Search
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Load produk
+  // Load produk in real-time
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getAllProduk();
+    setIsLoading(true);
+    const q = query(collection(db, "produk"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Produk[];
         setProducts(data);
-        setError(null);
-      } catch (err) {
+        setIsLoading(false);
+      },
+      (err) => {
         setError("Gagal memuat data produk");
         console.error("Error fetching products:", err);
-      } finally {
         setIsLoading(false);
-      }
-    };
+      },
+    );
 
-    fetchProducts();
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   // Show success message
@@ -76,11 +83,8 @@ export default function ProdukAdminPage() {
 
   // Handle tambah produk dengan validasi duplikasi
   const handleTambahSubmit = async (data: ProdukFormData) => {
-    // Cek duplikasi
     const duplicate = checkDuplicateProduct(data.nameProduk);
-
     if (duplicate) {
-      // Produk dengan nama sama ditemukan
       setExistingDuplicateProduct(duplicate);
       setPendingNewData(data);
       setDialogDuplikatOpen(true);
@@ -88,17 +92,9 @@ export default function ProdukAdminPage() {
       return;
     }
 
-    // Produk baru, langsung tambahkan
     try {
       setIsSubmitting(true);
-      const newId = await addProduk(data);
-      const newProduct: Produk = {
-        idProduk: newId,
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setProducts((prev) => [newProduct, ...prev]);
+      await addProduk(data);
       showSuccess("Produk berhasil ditambahkan");
       setDialogTambahOpen(false);
     } catch (err) {
@@ -115,26 +111,11 @@ export default function ProdukAdminPage() {
 
     try {
       setIsSubmitting(true);
-      // Update stok produk yang ada
-      const updatedData: ProdukFormData = {
-        ...existingDuplicateProduct,
+      const updatedData: Partial<ProdukFormData> = {
         stok: existingDuplicateProduct.stok + pendingNewData.stok,
       };
 
-      await updateProduk(existingDuplicateProduct.idProduk, updatedData);
-
-      // Update state
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.idProduk === existingDuplicateProduct.idProduk
-            ? {
-                ...p,
-                stok: p.stok + pendingNewData.stok,
-                updatedAt: new Date(),
-              }
-            : p,
-        ),
-      );
+      await updateProduk(existingDuplicateProduct.id, updatedData);
 
       showSuccess(
         `Stok berhasil ditambahkan. Total stok sekarang: ${
@@ -159,16 +140,8 @@ export default function ProdukAdminPage() {
 
     try {
       setIsSubmitting(true);
-      const newId = await addProduk(pendingNewData);
-      const newProduct: Produk = {
-        idProduk: newId,
-        ...pendingNewData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setProducts((prev) => [newProduct, ...prev]);
+      await addProduk(pendingNewData);
       showSuccess("Produk baru berhasil ditambahkan (duplikasi nama produk)");
-
       setDialogDuplikatOpen(false);
       setExistingDuplicateProduct(null);
       setPendingNewData(null);
@@ -186,14 +159,7 @@ export default function ProdukAdminPage() {
 
     try {
       setIsSubmitting(true);
-      await updateProduk(selectedProduct.idProduk, data);
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.idProduk === selectedProduct.idProduk
-            ? { ...p, ...data, updatedAt: new Date() }
-            : p,
-        ),
-      );
+      await updateProduk(selectedProduct.id, data);
       showSuccess("Produk berhasil diupdate");
       setDialogEditOpen(false);
       setSelectedProduct(null);
@@ -223,10 +189,7 @@ export default function ProdukAdminPage() {
 
     try {
       setIsSubmitting(true);
-      await deleteProduk(selectedProduct.idProduk);
-      setProducts((prev) =>
-        prev.filter((p) => p.idProduk !== selectedProduct.idProduk),
-      );
+      await deleteProduk(selectedProduct.id);
       showSuccess("Produk berhasil dihapus");
       setDialogHapusOpen(false);
       setSelectedProduct(null);

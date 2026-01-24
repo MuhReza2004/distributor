@@ -9,15 +9,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Produk } from "@/app/types/produk";
+import { InventoryData } from "@/app/dashboard/admin/inventory/page";
 
-interface InventoryTableSimpleProps {
-  products: Produk[];
+interface InventoryTableProps {
+  inventoryData: InventoryData[];
   isLoading?: boolean;
 }
 
-export const InventoryTableSimple: React.FC<InventoryTableSimpleProps> = ({
-  products,
+export const InventoryTable: React.FC<InventoryTableProps> = ({
+  inventoryData,
   isLoading = false,
 }) => {
   if (isLoading) {
@@ -28,10 +28,10 @@ export const InventoryTableSimple: React.FC<InventoryTableSimpleProps> = ({
     );
   }
 
-  if (products.length === 0) {
+  if (inventoryData.length === 0) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-500">Belum ada produk di inventory</div>
+        <div className="text-gray-500">Belum ada data inventory.</div>
       </div>
     );
   }
@@ -41,86 +41,31 @@ export const InventoryTableSimple: React.FC<InventoryTableSimpleProps> = ({
       <Table>
         <TableHeader>
           <TableRow className="bg-gray-100">
-            <TableHead className="font-semibold text-gray-700 w-12">
-              No
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700">
-              Kode Produk
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700">
-              Nama Produk
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-center">
-              Satuan
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">
-              Stok
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">
-              Min Stok
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-center">
-              Status
-            </TableHead>
+            <TableHead>Nama Produk</TableHead>
+            <TableHead className="text-right">Stok Awal</TableHead>
+            <TableHead className="text-right text-green-600">Stok Masuk</TableHead>
+            <TableHead className="text-right text-red-600">Stok Keluar</TableHead>
+            <TableHead className="text-right">Stok Akhir</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products.map((product, index) => {
-            const isLowStock = product.stok <= product.minimumStok;
-            const statusColor =
-              product.status === "aktif"
-                ? "text-green-600 bg-green-50"
-                : "text-red-600 bg-red-50";
-
+          {inventoryData.map((item) => {
+            const stokAwal = item.stok - item.totalMasuk + item.totalKeluar;
             return (
-              <TableRow
-                key={product.idProduk}
-                className={`border-b hover:bg-gray-50 transition-colors ${
-                  isLowStock ? "bg-yellow-50" : ""
-                }`}
-              >
-                <TableCell className="text-gray-700 font-medium">
-                  {index + 1}
-                </TableCell>
-                <TableCell className="text-gray-700 font-semibold text-sm">
-                  {product.kodeProduk}
-                </TableCell>
-                <TableCell className="text-gray-700 font-medium">
-                  {product.nameProduk}
-                </TableCell>
-                <TableCell className="text-center text-gray-600 text-sm">
-                  {product.satuan}
-                </TableCell>
-                <TableCell
-                  className={`text-right font-semibold ${
-                    isLowStock ? "text-red-600" : "text-gray-700"
-                  }`}
-                >
-                  {product.stok}
-                  {isLowStock && (
-                    <div className="text-xs text-red-600">⚠️ Rendah</div>
-                  )}
-                </TableCell>
-                <TableCell className="text-right text-gray-600 text-sm">
-                  {product.minimumStok}
-                </TableCell>
-                <TableCell className="text-center">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}
-                  >
-                    {product.status === "aktif" ? "✓ Aktif" : "✕ Nonaktif"}
-                  </span>
-                </TableCell>
+              <TableRow key={item.id} className="border-b hover:bg-gray-50">
+                <TableCell className="font-medium">{item.nameProduk}</TableCell>
+                <TableCell className="text-right">{stokAwal}</TableCell>
+                <TableCell className="text-right text-green-600">+{item.totalMasuk}</TableCell>
+                <TableCell className="text-right text-red-600">-{item.totalKeluar}</TableCell>
+                <TableCell className="text-right font-semibold">{item.stok}</TableCell>
               </TableRow>
             );
           })}
         </TableBody>
       </Table>
-
-      {/* Footer */}
       <div className="bg-gray-50 px-6 py-3 border-t text-sm text-gray-600">
         Total menampilkan{" "}
-        <span className="font-semibold">{products.length}</span> produk
+        <span className="font-semibold">{inventoryData.length}</span> produk.
       </div>
     </div>
   );

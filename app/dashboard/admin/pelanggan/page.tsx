@@ -12,9 +12,10 @@ import { Plus, Search } from "lucide-react";
 import {
   addpelanggan,
   deletePelanggan,
-  getAllPelanggan,
   updatePelanggan,
 } from "@/app/services/pelanggan.service";
+import { onSnapshot, collection, query, orderBy } from "firebase/firestore";
+import { db } from "@/app/lib/firebase";
 
 export default function PelangganAdminPage() {
   const [customers, setCustomers] = useState<Pelanggan[]>([]);
@@ -33,58 +34,48 @@ export default function PelangganAdminPage() {
   // Filter & Search
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Load pelanggan
+  // Load pelanggan in real-time
   useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getAllPelanggan();
+    setIsLoading(true);
+    const q = query(collection(db, "pelanggan"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() } as Pelanggan),
+        );
         setCustomers(data);
-        setError(null);
-      } catch (err) {
+        setIsLoading(false);
+      },
+      (err) => {
         setError("Gagal memuat data pelanggan");
         console.error("Error fetching customers:", err);
-      } finally {
         setIsLoading(false);
-      }
-    };
+      },
+    );
 
-    fetchCustomers();
+    return () => unsubscribe();
   }, []);
 
-  // Show success message
   const showSuccess = (message: string) => {
     setSuccess(message);
     setTimeout(() => setSuccess(null), 3000);
   };
 
-  // Cek apakah NIB sudah ada
   const checkDuplicateNIB = (nib: string) => {
     return customers.find((c) => c.nib === nib);
   };
 
-  // Handle tambah pelanggan dengan validasi NIB
   const handleTambahSubmit = async (data: PelangganFormData) => {
-    // Cek duplikasi berdasarkan NIB
     const duplicateNIB = checkDuplicateNIB(data.nib);
-
     if (duplicateNIB) {
-      // NIB sudah terdaftar
       setError(`NIB sudah terdaftar atas nama: ${duplicateNIB.namaToko}`);
       return;
     }
 
-    // Pelanggan baru, tambahkan
     try {
       setIsSubmitting(true);
-      const newId = await addpelanggan(data);
-      const newCustomer: Pelanggan = {
-        idPelanggan: newId,
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setCustomers((prev) => [newCustomer, ...prev]);
+      await addpelanggan(data);
       showSuccess("Pelanggan berhasil ditambahkan");
       setDialogTambahOpen(false);
       setError(null);
@@ -96,30 +87,24 @@ export default function PelangganAdminPage() {
     }
   };
 
-  // Handle skip duplicate
-  const handleSkipDuplicate = async () => {
-    // User memilih untuk tidak menambahkan
-  };
-
-  // Handle tambah pelanggan baru meskipun ada duplikasi
-  const handleAddNewAnyway = async () => {
-    // Tidak digunakan
-  };
-
-  // Handle edit pelanggan
   const handleEditSubmit = async (data: PelangganFormData) => {
     if (!selectedCustomer) return;
 
+    // A new object is created with only the properties of `PelangganFormData`
+    const cleanData: Partial<PelangganFormData> = {
+      namePelanggan: data.namePelanggan,
+      kodePelanggan: data.kodePelanggan,
+      namaToko: data.namaToko,
+      nib: data.nib,
+      alamat: data.alamat,
+      noTelp: data.noTelp,
+      email: data.email,
+      status: data.status,
+    };
+
     try {
       setIsSubmitting(true);
-      await updatePelanggan(selectedCustomer.idPelanggan, data);
-      setCustomers((prev) =>
-        prev.map((c) =>
-          c.idPelanggan === selectedCustomer.idPelanggan
-            ? { ...c, ...data, updatedAt: new Date() }
-            : c,
-        ),
-      );
+      await updatePelanggan(selectedCustomer.id, cleanData);
       showSuccess("Pelanggan berhasil diperbarui");
       setDialogEditOpen(false);
       setSelectedCustomer(null);
@@ -131,28 +116,22 @@ export default function PelangganAdminPage() {
     }
   };
 
-  // Handle edit pelanggan (button click)
   const handleEditClick = (customer: Pelanggan) => {
     setSelectedCustomer(customer);
     setDialogEditOpen(true);
   };
 
-  // Handle delete pelanggan (button click)
   const handleDeleteClick = (customer: Pelanggan) => {
     setSelectedCustomer(customer);
     setDialogHapusOpen(true);
   };
 
-  // Handle delete confirm
   const handleDeleteConfirm = async () => {
     if (!selectedCustomer) return;
 
     try {
       setIsSubmitting(true);
-      await deletePelanggan(selectedCustomer.idPelanggan);
-      setCustomers((prev) =>
-        prev.filter((c) => c.idPelanggan !== selectedCustomer.idPelanggan),
-      );
+      await deletePelanggan(selectedCustomer.id);
       showSuccess("Pelanggan berhasil dihapus");
       setDialogHapusOpen(false);
       setSelectedCustomer(null);
@@ -191,7 +170,6 @@ export default function PelangganAdminPage() {
       {/* Search & Button Bar */}
       <div className="bg-white p-6 rounded-lg border space-y-4">
         <div className="flex gap-4 items-end">
-          {/* Search Input */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
             <Input
@@ -203,7 +181,6 @@ export default function PelangganAdminPage() {
             />
           </div>
 
-          {/* Tombol Tambah */}
           <Button
             onClick={() => {
               setSelectedCustomer(null);
@@ -217,7 +194,6 @@ export default function PelangganAdminPage() {
         </div>
       </div>
 
-      {/* Customers Table */}
       <TabelPelanggan
         customers={customers}
         isLoading={isLoading}
@@ -226,7 +202,6 @@ export default function PelangganAdminPage() {
         searchTerm={searchTerm}
       />
 
-      {/* Dialog Tambah */}
       <DialogTambahPelanggan
         open={dialogTambahOpen}
         onOpenChange={setDialogTambahOpen}
@@ -234,7 +209,6 @@ export default function PelangganAdminPage() {
         isLoading={isSubmitting}
       />
 
-      {/* Dialog Edit */}
       <DialogEditPelanggan
         open={dialogEditOpen}
         onOpenChange={setDialogEditOpen}
@@ -243,7 +217,6 @@ export default function PelangganAdminPage() {
         isLoading={isSubmitting}
       />
 
-      {/* Dialog Hapus */}
       <DialogHapusPelanggan
         open={dialogHapusOpen}
         onOpenChange={setDialogHapusOpen}
