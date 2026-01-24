@@ -10,22 +10,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Produk } from "@/app/types/produk";
+import { Pelanggan } from "@/app/types/pelanggan";
 import { AlertCircle } from "lucide-react";
 
-interface DialogHapusProdukProps {
+interface DialogHapusPelangganProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => Promise<void>;
-  produk: Produk | null;
+  pelanggan: Pelanggan | null;
   isLoading?: boolean;
 }
 
-export const DialogHapusProduk: React.FC<DialogHapusProdukProps> = ({
+export const DialogHapusPelanggan: React.FC<DialogHapusPelangganProps> = ({
   open,
   onOpenChange,
   onConfirm,
-  produk,
+  pelanggan,
   isLoading = false,
 }) => {
   const handleDelete = async () => {
@@ -39,28 +39,30 @@ export const DialogHapusProduk: React.FC<DialogHapusProdukProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-red-600">
             <AlertCircle className="w-5 h-5" />
-            Hapus Produk
+            Hapus Pelanggan
           </DialogTitle>
           <DialogDescription>
-            Tindakan ini tidak dapat dibatalkan. Data produk akan dihapus secara
-            permanen.
+            Tindakan ini tidak dapat dibatalkan. Data pelanggan akan dihapus
+            secara permanen.
           </DialogDescription>
         </DialogHeader>
 
-        {produk && (
+        {pelanggan && (
           <div className="bg-red-50 border border-red-200 rounded p-4">
             <p className="text-sm text-gray-600">
-              <span className="font-semibold">ID Produk:</span>{" "}
-              {produk.idProduk}
+              <span className="font-semibold">ID Pelanggan:</span>{" "}
+              {pelanggan.idPelanggan}
             </p>
             <p className="text-sm text-gray-600 mt-2">
-              <span className="font-semibold">Nama:</span> {produk.nameProduk}
+              <span className="font-semibold">Nama:</span>{" "}
+              {pelanggan.namePelanggan}
             </p>
             <p className="text-sm text-gray-600 mt-2">
-              <span className="font-semibold">Kode:</span> {produk.kodeProduk}
+              <span className="font-semibold">No. Telp:</span>{" "}
+              {pelanggan.noTelp}
             </p>
             <p className="text-sm text-red-600 mt-3 font-semibold">
-              Apakah Anda yakin ingin menghapus produk ini?
+              Apakah Anda yakin ingin menghapus pelanggan ini?
             </p>
           </div>
         )}
@@ -80,7 +82,7 @@ export const DialogHapusProduk: React.FC<DialogHapusProdukProps> = ({
             onClick={handleDelete}
             disabled={isLoading}
           >
-            {isLoading ? "Menghapus..." : "Hapus Produk"}
+            {isLoading ? "Menghapus..." : "Hapus Pelanggan"}
           </Button>
         </DialogFooter>
       </DialogContent>

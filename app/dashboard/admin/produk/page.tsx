@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DialogTambahProduk } from "@/components/produk/DialogTambahProdukNew";
-import { DialogEditProduk } from "@/components/produk/DialogEditProdukNew";
-import { DialogHapusProduk } from "@/components/produk/DialogHapusProdukNew";
+import { DialogTambahProduk } from "@/components/produk/DialogTambahProduk";
+import { DialogEditProduk } from "@/components/produk/DialogEditProduk";
+import { DialogHapusProduk } from "@/components/produk/DialogHapusProduk";
 import { DialogProdukDuplikat } from "@/components/produk/DialogProdukDuplikat";
-import { TabelProdukNew } from "@/components/produk/TabelProdukNew";
+import { TabelProdukNew } from "@/components/produk/TabelProduk";
 import {
   getAllProduk,
   addProduk,

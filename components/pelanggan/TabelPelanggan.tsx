@@ -10,54 +10,56 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Produk } from "@/app/types/produk";
+import { Pelanggan } from "@/app/types/pelanggan";
 import { Edit2, Trash2 } from "lucide-react";
 
-interface TabelProdukNewProps {
-  products: Produk[];
+interface TabelPelangganProps {
+  customers: Pelanggan[];
   isLoading?: boolean;
-  onEdit: (product: Produk) => void;
-  onDelete: (product: Produk) => void;
+  onEdit: (customer: Pelanggan) => void;
+  onDelete: (customer: Pelanggan) => void;
   searchTerm?: string;
 }
 
-export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
-  products,
+export const TabelPelanggan: React.FC<TabelPelangganProps> = ({
+  customers,
   isLoading = false,
   onEdit,
   onDelete,
   searchTerm = "",
 }) => {
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingId, setDeleteingId] = useState<string | null>(null);
 
   // Filter berdasarkan search
-  const filteredProducts = useMemo(() => {
-    if (!searchTerm.trim()) return products;
+  const filteredCustomers = useMemo(() => {
+    if (!searchTerm.trim()) return customers;
 
     const search = searchTerm.toLowerCase();
-    return products.filter(
-      (p) =>
-        p.nameProduk.toLowerCase().includes(search) ||
-        p.kodeProduk.toLowerCase().includes(search) ||
-        p.idProduk.toLowerCase().includes(search),
+    return customers.filter(
+      (c) =>
+        c.namePelanggan.toLowerCase().includes(search) ||
+        c.kodePelanggan.toLowerCase().includes(search) ||
+        c.idPelanggan.toLowerCase().includes(search) ||
+        c.nib.toLowerCase().includes(search) ||
+        c.noTelp.toLowerCase().includes(search),
     );
-  }, [products, searchTerm]);
+  }, [customers, searchTerm]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-500">Memuat data produk...</div>
+        <div className="text-gray-500">Memuat data pelanggan...</div>
       </div>
     );
   }
 
-  if (filteredProducts.length === 0) {
+  if (filteredCustomers.length === 0) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-gray-500">
-          {products.length === 0
-            ? "Belum ada produk"
-            : "Produk tidak ditemukan"}
+          {customers.length === 0
+            ? "Belum ada pelanggan"
+            : "Pelanggan tidak ditemukan"}
         </div>
       </div>
     );
@@ -71,25 +73,18 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
             <TableHead className="font-semibold text-gray-700 w-12">
               No
             </TableHead>
-
-            <TableHead className="font-semibold text-gray-700">Kode</TableHead>
             <TableHead className="font-semibold text-gray-700">
-              Nama Produk
+              Nama Pelanggan
             </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-center">
-              Satuan
+            <TableHead className="font-semibold text-gray-700">NIB</TableHead>
+            <TableHead className="font-semibold text-gray-700">
+              No. Telp
             </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">
-              Harga Beli
+            <TableHead className="font-semibold text-gray-700">
+              Nama Toko
             </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">
-              Harga Jual
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">
-              Stok
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">
-              Min Stok
+            <TableHead className="font-semibold text-gray-700">
+              Alamat
             </TableHead>
             <TableHead className="font-semibold text-gray-700 text-center">
               Status
@@ -100,56 +95,41 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredProducts.map((product, index) => {
-            const isLowStock = product.stok <= product.minimumStok;
+          {filteredCustomers.map((customer, index) => {
             const statusColor =
-              product.status === "aktif"
+              customer.status === "aktif"
                 ? "text-green-600 bg-green-50"
                 : "text-red-600 bg-red-50";
 
             return (
               <TableRow
-                key={product.idProduk}
-                className={`border-b hover:bg-gray-50 transition-colors ${
-                  isLowStock ? "bg-yellow-50" : ""
-                }`}
+                key={customer.idPelanggan}
+                className="border-b hover:bg-gray-50 transition-colors"
               >
                 <TableCell className="text-gray-700 font-medium">
                   {index + 1}
                 </TableCell>
-                <TableCell className="text-gray-700 font-semibold text-sm">
-                  {product.kodeProduk}
-                </TableCell>
                 <TableCell className="text-gray-700 font-medium">
-                  {product.nameProduk}
+                  {customer.namePelanggan}
                 </TableCell>
-                <TableCell className="text-center text-gray-600 text-sm">
-                  {product.satuan}
+
+                <TableCell className="text-gray-700 text-sm">
+                  {customer.nib}
                 </TableCell>
-                <TableCell className="text-right text-gray-700 font-semibold">
-                  Rp {product.hargaBeli.toLocaleString("id-ID")}
+                <TableCell className="text-gray-700 text-sm">
+                  {customer.noTelp}
                 </TableCell>
-                <TableCell className="text-right text-gray-700 font-semibold">
-                  Rp {product.hargaJual.toLocaleString("id-ID")}
+                <TableCell className="text-gray-700 text-sm">
+                  {customer.namaToko || "-"}
                 </TableCell>
-                <TableCell
-                  className={`text-right font-semibold ${
-                    isLowStock ? "text-red-600" : "text-gray-700"
-                  }`}
-                >
-                  {product.stok}
-                  {isLowStock && (
-                    <div className="text-xs text-red-600">⚠️ Kurang</div>
-                  )}
-                </TableCell>
-                <TableCell className="text-right text-gray-600 text-sm">
-                  {product.minimumStok}
+                <TableCell className="text-gray-700 text-sm max-w-xs truncate">
+                  {customer.alamat}
                 </TableCell>
                 <TableCell className="text-center">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}
                   >
-                    {product.status === "aktif" ? "✓ Aktif" : "✕ Nonaktif"}
+                    {customer.status === "aktif" ? "✓ Aktif" : "✕ Nonaktif"}
                   </span>
                 </TableCell>
                 <TableCell className="text-center">
@@ -157,7 +137,7 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => onEdit(product)}
+                      onClick={() => onEdit(customer)}
                       className="h-8 px-2"
                       title="Edit"
                     >
@@ -167,10 +147,10 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
                       size="sm"
                       variant="destructive"
                       onClick={() => {
-                        setDeletingId(product.idProduk);
-                        onDelete(product);
+                        setDeleteingId(customer.idPelanggan);
+                        onDelete(customer);
                       }}
-                      disabled={deletingId === product.idProduk}
+                      disabled={deletingId === customer.idPelanggan}
                       className="h-8 px-2"
                       title="Hapus"
                     >
@@ -187,8 +167,8 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
       {/* Footer dengan info */}
       <div className="bg-gray-50 px-6 py-3 border-t text-sm text-gray-600">
         Menampilkan{" "}
-        <span className="font-semibold">{filteredProducts.length}</span> dari{" "}
-        <span className="font-semibold">{products.length}</span> produk
+        <span className="font-semibold">{filteredCustomers.length}</span> dari{" "}
+        <span className="font-semibold">{customers.length}</span> pelanggan
         {searchTerm && ` (Pencarian: "${searchTerm}")`}
       </div>
     </div>

@@ -1,422 +1,302 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateProduk } from "@/app/services/produk.service";
-import { getAllSuppliers } from "@/app/services/supplyer.service";
-import { Produk, ProdukFormData } from "@/app/types/produk";
-import { Supplier } from "@/app/types/suplyer";
+import { ProdukFormData, Produk } from "@/app/types/produk";
 import { formatRupiah } from "@/helper/format";
 
 interface DialogEditProdukProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSubmit: (data: ProdukFormData) => Promise<void>;
   produk: Produk | null;
-  onSuccess?: () => void;
+  isLoading?: boolean;
 }
 
-export default function DialogEditProduk({
+const SATUAN_OPTIONS = [
+  { value: "sak", label: "Sak" },
+  { value: "pcs", label: "Pcs" },
+  { value: "kg", label: "Kg" },
+  { value: "liter", label: "Liter" },
+];
+
+export const DialogEditProduk: React.FC<DialogEditProdukProps> = ({
   open,
   onOpenChange,
+  onSubmit,
   produk,
-  onSuccess,
-}: DialogEditProdukProps) {
-  const [loading, setLoading] = useState(false);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
-  const [formData, setFormData] = useState<ProdukFormData>({
-    supplyerName: "",
-    dateReceived: "",
-    contractNumber: "",
-    invoiceNumber: "",
-    warehouseOrigin: "",
-    npb: "",
-    name: "",
-    unit: "dus",
-    buyPrice: 0,
-    stock: 0,
+  isLoading = false,
+}) => {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    control,
+    formState: { errors },
+  } = useForm<ProdukFormData>({
+    defaultValues: produk || {
+      nameProduk: "",
+      kodeProduk: "",
+      kategori: "lainnya",
+      satuan: "pcs",
+      hargaBeli: 0,
+      hargaJual: 0,
+      stok: 0,
+      minimumStok: 0,
+      status: "aktif",
+    },
   });
 
-  useEffect(() => {
-    const loadSuppliers = async () => {
-      const data = await getAllSuppliers();
-      setSuppliers(data);
-    };
-    loadSuppliers();
-  }, []);
+  const hargaBeli = watch("hargaBeli");
+  const hargaJual = watch("hargaJual");
 
-  // Load data produk ke form saat dialog dibuka
+  const onSubmitForm = async (data: ProdukFormData) => {
+    await onSubmit(data);
+  };
+
   useEffect(() => {
     if (produk && open) {
-      setFormData({
-        supplyerName: produk.supplyerName || "",
-        dateReceived: produk.dateReceived || "",
-        contractNumber: produk.contractNumber || "",
-        invoiceNumber: produk.invoiceNumber || "",
-        warehouseOrigin: produk.warehouseOrigin || "",
-        npb: produk.npb || "",
-        name: produk.name || "",
-        unit: produk.unit || "dus",
-        buyPrice: produk.buyPrice || 0,
-        stock: produk.stock || 0,
-      });
-      setMessage(null);
+      reset(produk);
     }
-  }, [produk, open]);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value, type } = e.target;
-
-    if (name === "buyPrice") {
-      const numeric = value.replace(/\D/g, "");
-      setFormData((p) => ({ ...p, [name]: Number(numeric) }));
-      return;
-    }
-
-    if (type === "number") {
-      setFormData((p) => ({ ...p, [name]: Number(value) }));
-      return;
-    }
-
-    setFormData((p) => ({ ...p, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!produk) return;
-
-    setLoading(true);
-    setMessage(null);
-
-    try {
-      // Validasi
-      if (!formData.supplyerName.trim()) {
-        throw new Error("Nama supplier harus diisi");
-      }
-      if (!formData.dateReceived.trim()) {
-        throw new Error("Tanggal penerimaan harus diisi");
-      }
-      if (!formData.contractNumber.trim()) {
-        throw new Error("Nomor kontrak harus diisi");
-      }
-      if (!formData.invoiceNumber.trim()) {
-        throw new Error("Nomor faktur harus diisi");
-      }
-      if (!formData.warehouseOrigin.trim()) {
-        throw new Error("Asal gudang harus diisi");
-      }
-      if (!formData.npb.trim()) {
-        throw new Error("NPB harus diisi");
-      }
-      if (!formData.name.trim()) {
-        throw new Error("Nama produk harus diisi");
-      }
-      if (formData.stock <= 0) {
-        throw new Error("Stok harus lebih dari 0");
-      }
-      if (formData.buyPrice <= 0) {
-        throw new Error("Harga beli harus lebih dari 0");
-      }
-
-      // Update ke Firestore
-      await updateProduk(produk.id, formData);
-
-      setMessage({ type: "success", text: "Produk berhasil diupdate!" });
-
-      // Callback untuk refresh tabel
-      if (onSuccess) {
-        setTimeout(() => {
-          onSuccess();
-          onOpenChange(false);
-          setMessage(null);
-        }, 1000);
-      } else {
-        setTimeout(() => {
-          onOpenChange(false);
-          setMessage(null);
-        }, 1000);
-      }
-    } catch (error: any) {
-      console.error("Error updating produk:", error);
-      setMessage({
-        type: "error",
-        text:
-          error instanceof Error ? error.message : "Gagal mengupdate produk",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClose = () => {
-    if (!loading) {
-      setMessage(null);
-      onOpenChange(false);
-    }
-  };
-
-  if (!produk) return null;
+  }, [produk, open, reset]);
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl rounded-xl border-0 p-6">
-        <DialogHeader className="text-center">
-          <DialogTitle className="text-2xl font-bold text-gray-800">
-            Edit Produk
-          </DialogTitle>
-          <DialogDescription className="text-gray-600 mt-2">
-            Ubah informasi produk yang dipilih
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Produk</DialogTitle>
+          <DialogDescription>
+            Perbarui informasi produk di bawah ini.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Section: Informasi Supplier */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">
-                1
-              </span>
-              Informasi Supplier
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Nama Supplier <span className="text-red-500">*</span>
-                </Label>
-                <select
-                  name="supplyerName"
-                  value={formData.supplyerName}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-500 focus:ring-blue-500 bg-white disabled:bg-gray-100"
-                >
-                  <option value="">-- Pilih Supplier --</option>
-                  {suppliers.map((supplier) => (
-                    <option key={supplier.id} value={supplier.name}>
-                      {supplier.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  Tanggal Penerimaan <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  name="dateReceived"
-                  value={formData.dateReceived}
-                  type="date"
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  Nomor Kontrak <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  name="contractNumber"
-                  value={formData.contractNumber}
-                  placeholder="Masukkan nomor kontrak"
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  Nomor Faktur <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  name="invoiceNumber"
-                  value={formData.invoiceNumber}
-                  placeholder="Masukkan nomor faktur"
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  NPB(No Penerimaan Barang){" "}
-                  <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  name="npb"
-                  value={formData.npb}
-                  placeholder="Masukkan NPB"
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  Asal Gudang <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  name="warehouseOrigin"
-                  value={formData.warehouseOrigin}
-                  placeholder="Masukkan Asal Gudang"
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  className="mt-1 border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md disabled:bg-gray-100"
-                />
-              </div>
-            </div>
+        {produk && (
+          <div className="mb-4 p-3 bg-gray-100 rounded text-sm text-gray-700">
+            ID Produk:{" "}
+            <span className="font-mono font-semibold">{produk.idProduk}</span>
           </div>
+        )}
 
-          {/* Section: Informasi Produk */}
-          <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <span className="bg-green-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">
-                2
-              </span>
-              Informasi Produk
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Nama Produk <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  name="name"
-                  value={formData.name}
-                  placeholder="Masukkan nama produk"
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  Jumlah Stok <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  name="stock"
-                  type="number"
-                  value={formData.stock}
-                  placeholder="0"
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  disabled={loading}
-                  className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  Satuan <span className="text-red-500">*</span>
-                </Label>
-                <select
-                  name="unit"
-                  value={formData.unit}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 focus:border-green-500 focus:ring-green-500 bg-white disabled:bg-gray-100"
-                >
-                  <option value="dus">Dus</option>
-                  <option value="pcs">Pcs</option>
-                  <option value="kg">Kg</option>
-                  <option value="liter">Liter</option>
-                  <option value="sak">Sak</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Section: Informasi Harga */}
-          <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <span className="bg-amber-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">
-                3
-              </span>
-              Informasi Harga
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  Harga Beli Satuan <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  name="buyPrice"
-                  value={formatRupiah(formData.buyPrice)}
-                  placeholder="Rp 0"
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  className="mt-1 border-gray-300 focus:border-amber-500 focus:ring-amber-500 rounded-md disabled:bg-gray-100"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Harga pembelian dari supplier
+        <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-6">
+          {/* Row 1: Nama & Kode */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="nameProduk" className="font-semibold">
+                Nama Produk *
+              </Label>
+              <Input
+                id="nameProduk"
+                placeholder="Masukkan nama produk"
+                {...register("nameProduk", {
+                  required: "Nama produk wajib diisi",
+                  minLength: { value: 3, message: "Minimal 3 karakter" },
+                })}
+                className={errors.nameProduk ? "border-red-500" : ""}
+              />
+              {errors.nameProduk && (
+                <p className="text-sm text-red-500">
+                  {errors.nameProduk.message}
                 </p>
-              </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="kodeProduk" className="font-semibold">
+                Kode Produk (SKU)
+              </Label>
+              <Input
+                id="kodeProduk"
+                placeholder="Auto-generated"
+                {...register("kodeProduk")}
+                readOnly
+                className="bg-gray-100 cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-500">Kode tidak dapat diubah</p>
             </div>
           </div>
 
-          {message && (
-            <div
-              className={`p-3 rounded-md ${
-                message.type === "success"
-                  ? "bg-green-50 text-green-800 border border-green-200"
-                  : "bg-red-50 text-red-800 border border-red-200"
-              }`}
-            >
-              {message.text}
+          {/* Row 2: Satuan & Status */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="satuan" className="font-semibold">
+                Satuan *
+              </Label>
+              <select
+                id="satuan"
+                {...register("satuan", { required: "Satuan wajib dipilih" })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {SATUAN_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {errors.satuan && (
+                <p className="text-sm text-red-500">{errors.satuan.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status" className="font-semibold">
+                Status *
+              </Label>
+              <select
+                id="status"
+                {...register("status")}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="aktif">Aktif</option>
+                <option value="nonaktif">Nonaktif</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Row 3: Harga Beli & Harga Jual */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="hargaBeli" className="font-semibold">
+                Harga Beli *
+              </Label>
+              <Controller
+                control={control}
+                name="hargaBeli"
+                rules={{ required: "Harga beli wajib diisi" }}
+                render={({ field }) => (
+                  <Input
+                    id="hargaBeli"
+                    inputMode="numeric"
+                    placeholder="Rp 0"
+                    value={field.value ? formatRupiah(field.value) : ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, "");
+                      field.onChange(Number(raw));
+                    }}
+                    className={errors.hargaBeli ? "border-red-500" : ""}
+                  />
+                )}
+              />
+              {errors.hargaBeli && (
+                <p className="text-sm text-red-500">
+                  {errors.hargaBeli.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hargaJual" className="font-semibold">
+                Harga Jual *
+              </Label>
+              <Controller
+                control={control}
+                name="hargaJual"
+                rules={{ required: "Harga jual wajib diisi" }}
+                render={({ field }) => (
+                  <Input
+                    id="hargaJual"
+                    inputMode="numeric"
+                    placeholder="Rp 0"
+                    value={field.value ? formatRupiah(field.value) : ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, "");
+                      field.onChange(Number(raw));
+                    }}
+                    className={errors.hargaJual ? "border-red-500" : ""}
+                  />
+                )}
+              />
+              {errors.hargaJual && (
+                <p className="text-sm text-red-500">
+                  {errors.hargaJual.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Margin Info */}
+          {hargaBeli > 0 && hargaJual > 0 && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+              Margin Profit: Rp{" "}
+              {(hargaJual - hargaBeli).toLocaleString("id-ID")} (
+              {Math.round(((hargaJual - hargaBeli) / hargaBeli) * 100)}%)
             </div>
           )}
 
-          <DialogFooter className="flex justify-end space-x-2 pt-4 border-t">
+          {/* Row 4: Stok & Minimum Stok */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="stok" className="font-semibold">
+                Stok Saat Ini *
+              </Label>
+              <Input
+                id="stok"
+                type="number"
+                placeholder="0"
+                {...register("stok", {
+                  required: "Stok wajib diisi",
+                  min: { value: 0, message: "Stok tidak boleh negatif" },
+                  valueAsNumber: true,
+                })}
+                className={errors.stok ? "border-red-500" : ""}
+              />
+              {errors.stok && (
+                <p className="text-sm text-red-500">{errors.stok.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="minimumStok" className="font-semibold">
+                Minimum Stok *
+              </Label>
+              <Input
+                id="minimumStok"
+                type="number"
+                placeholder="0"
+                {...register("minimumStok", {
+                  required: "Minimum stok wajib diisi",
+                  min: {
+                    value: 0,
+                    message: "Minimum stok tidak boleh negatif",
+                  },
+                  valueAsNumber: true,
+                })}
+                className={errors.minimumStok ? "border-red-500" : ""}
+              />
+              {errors.minimumStok && (
+                <p className="text-sm text-red-500">
+                  {errors.minimumStok.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={handleClose}
-              disabled={loading}
-              className="px-4 py-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
             >
               Batal
             </Button>
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {loading ? "Menyimpan..." : "Simpan Perubahan"}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Menyimpan..." : "Update Produk"}
             </Button>
           </DialogFooter>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
-}
+};
