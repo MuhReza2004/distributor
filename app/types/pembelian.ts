@@ -10,6 +10,7 @@ export interface Pembelian {
   id?: string;
   npb: string;
   nomorDO: string;
+  nomorKontrak: string;
   supplierId: string;
   supplierNama: string;
   tanggal: string;

@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { createPembelian } from "@/app/services/pembelian.service";
 import { PembelianItem } from "@/app/types/pembelian";
 import { addProduk, getAllProduk } from "@/app/services/produk.service";
-import { addProductToSupplier, getAllSuppliers } from "@/app/services/supplyer.service";
+import {
+  addProductToSupplier,
+  getAllSuppliers,
+} from "@/app/services/supplyer.service";
 import { Produk, ProdukFormData } from "@/app/types/produk";
 import { Supplier } from "@/app/types/suplyer";
 
@@ -27,6 +30,9 @@ interface PembelianFormProps {
 export default function PembelianForm({ onSuccess }: PembelianFormProps) {
   const [supplierId, setSupplierId] = useState("");
   const [supplierNama, setSupplierNama] = useState("");
+  const [npb, setNpb] = useState("");
+  const [nomorDO, setNomorDO] = useState("");
+  const [nomorKontrak, setNomorKontrak] = useState("");
   const [produkList, setProdukList] = useState<Produk[]>([]);
   const [supplierList, setSupplierList] = useState<Supplier[]>([]);
   const [items, setItems] = useState<PembelianItem[]>([]);
@@ -79,6 +85,18 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
       alert("Pilih supplier terlebih dahulu");
       return;
     }
+    if (!npb) {
+      alert("NPB harus diisi");
+      return;
+    }
+    if (!nomorDO) {
+      alert("Nomor DO harus diisi");
+      return;
+    }
+    if (!nomorKontrak) {
+        alert("Nomor Kontrak harus diisi");
+        return;
+    }
     if (items.some((item) => !item.produkId || !item.qty)) {
       alert("Pastikan semua produk dan kuantitas terisi");
       return;
@@ -87,8 +105,9 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
     setIsLoading(true);
     try {
       await createPembelian({
-        npb: `NPB-${Date.now()}`,
-        nomorDO: `DO-${Date.now()}`,
+        npb,
+        nomorDO,
+        nomorKontrak,
         supplierId,
         supplierNama,
         tanggal: new Date().toISOString(),
@@ -100,6 +119,9 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
 
       alert("Pembelian berhasil!");
       setItems([]);
+      setNpb("");
+      setNomorDO("");
+      setNomorKontrak("");
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error(error);
@@ -173,6 +195,24 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
             </Button>
           </div>
 
+          <div className="grid grid-cols-3 gap-4">
+            <Input
+              placeholder="Nomor Pembelian (NPB)"
+              value={npb}
+              onChange={(e) => setNpb(e.target.value)}
+            />
+            <Input
+              placeholder="Nomor Delivery Order (Nomor DO)"
+              value={nomorDO}
+              onChange={(e) => setNomorDO(e.target.value)}
+            />
+            <Input
+              placeholder="Nomor Kontrak"
+              value={nomorKontrak}
+              onChange={(e) => setNomorKontrak(e.target.value)}
+            />
+          </div>
+
           <div className="space-y-2">
             {items.map((item, i) => (
               <div key={i} className="grid grid-cols-5 gap-2 items-center">
@@ -196,12 +236,10 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
                   type="number"
                   min={1}
                   value={item.qty}
-                  onChange={(e) =>
-                    updateItem(i, "qty", Number(e.target.value))
-                  }
+                  onChange={(e) => updateItem(i, "qty", Number(e.target.value))}
                   placeholder="Qty"
                 />
-                 <Input
+                <Input
                   type="number"
                   value={item.hargaBeli}
                   onChange={(e) =>
