@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   createPenjualan,
   generateInvoiceNumber,
@@ -57,6 +57,7 @@ export default function PenjualanForm({
 }: PenjualanFormProps) {
   const [pelangganId, setPelangganId] = useState("");
   const [namaPelanggan, setNamaPelanggan] = useState("");
+  const [alamatPelanggan, setAlamatPelanggan] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [produkList, setProdukList] = useState<Produk[]>([]);
   const [pelangganList, setPelangganList] = useState<Pelanggan[]>([]);
@@ -65,15 +66,22 @@ export default function PenjualanForm({
   const [metodePembayaran, setMetodePembayaran] = useState<
     "Tunai" | "Transfer"
   >("Tunai");
+  const [nomorRekening, setNomorRekening] = useState("");
+  const [diskon, setDiskon] = useState(0);
+  const [pajakEnabled, setPajakEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const resetForm = () => {
     setPelangganId("");
     setNamaPelanggan("");
+    setAlamatPelanggan("");
     setItems([]);
     setStatus("Lunas");
     setMetodePembayaran("Tunai");
+    setNomorRekening("");
+    setDiskon(0);
+    setPajakEnabled(true);
     setError(null);
     generateInvoiceNumber().then(setInvoiceNumber);
   };
@@ -156,7 +164,20 @@ export default function PenjualanForm({
     setItems(items.filter((_, idx) => idx !== index));
   };
 
-  const total = items.reduce((sum, i) => sum + i.subtotal, 0);
+  const subtotal = useMemo(
+    () => items.reduce((sum, i) => sum + i.subtotal, 0),
+    [items],
+  );
+
+  const pajak = useMemo(() => {
+    if (!pajakEnabled) return 0;
+    return (subtotal - diskon) * 0.11;
+  }, [subtotal, diskon, pajakEnabled]);
+
+  const totalAkhir = useMemo(
+    () => subtotal - diskon + pajak,
+    [subtotal, diskon, pajak],
+  );
 
   const submit = async () => {
     setError(null);
@@ -174,17 +195,29 @@ export default function PenjualanForm({
 
     setIsLoading(true);
     try {
-      await createPenjualan({
+      const penjualanData: any = {
         nomorInvoice: invoiceNumber,
         pelangganId,
         namaPelanggan,
+        alamatPelanggan,
         tanggal: new Date().toISOString(),
         items,
-        total,
+        total: subtotal,
+        diskon,
+        pajak,
+        totalAkhir,
         status,
         metodePembayaran,
+        pajakEnabled,
         createdAt: new Date(),
-      });
+      };
+
+      // Only include nomorRekening if payment method is Transfer
+      if (metodePembayaran === "Transfer") {
+        penjualanData.nomorRekening = nomorRekening;
+      }
+
+      await createPenjualan(penjualanData);
 
       alert("Penjualan berhasil disimpan!");
       onSuccess();
@@ -251,6 +284,7 @@ export default function PenjualanForm({
                   if (p) {
                     setPelangganId(p.id);
                     setNamaPelanggan(p.namePelanggan);
+                    setAlamatPelanggan(p.alamat || "");
                   }
                 }}
                 value={pelangganId}
@@ -292,7 +326,12 @@ export default function PenjualanForm({
                 Metode Pembayaran
               </Label>
               <Select
-                onValueChange={(v: any) => setMetodePembayaran(v)}
+                onValueChange={(v: any) => {
+                  setMetodePembayaran(v);
+                  if (v === "Tunai") {
+                    setNomorRekening("");
+                  }
+                }}
                 value={metodePembayaran}
               >
                 <SelectTrigger>
@@ -303,6 +342,53 @@ export default function PenjualanForm({
                   <SelectItem value="Transfer">Transfer</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Nomor Rekening - hanya muncul jika Transfer */}
+            {metodePembayaran === "Transfer" && (
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-foreground">
+                  Nomor Rekening
+                </Label>
+                <Input
+                  value={nomorRekening}
+                  onChange={(e) => setNomorRekening(e.target.value)}
+                  placeholder="Masukkan nomor rekening"
+                />
+              </div>
+            )}
+
+            {/* Diskon */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-foreground">
+                Diskon (Rp)
+              </Label>
+              <Input
+                type="number"
+                min={0}
+                value={diskon}
+                onChange={(e) => setDiskon(Number(e.target.value))}
+                placeholder="0"
+              />
+            </div>
+
+            {/* Pajak Toggle */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-foreground">
+                Pajak PPN 11%
+              </Label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="pajak-toggle"
+                  checked={pajakEnabled}
+                  onChange={(e) => setPajakEnabled(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <Label htmlFor="pajak-toggle" className="text-sm text-gray-700">
+                  {pajakEnabled ? "Aktif" : "Nonaktif"}
+                </Label>
+              </div>
             </div>
           </div>
 
@@ -464,13 +550,28 @@ export default function PenjualanForm({
           <Separator />
 
           {/* TOTAL SECTION */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 space-y-3">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>Subtotal:</div>
+              <div className="text-right">{formatRupiah(subtotal)}</div>
+              <div>Diskon:</div>
+              <div className="text-right text-red-600">
+                -{formatRupiah(diskon)}
+              </div>
+              {pajakEnabled && (
+                <>
+                  <div>PPN 11%:</div>
+                  <div className="text-right">{formatRupiah(pajak)}</div>
+                </>
+              )}
+            </div>
+            <Separator />
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold text-gray-700">
-                Total Penjualan
+                Total Akhir
               </span>
               <span className="text-3xl font-bold text-green-600">
-                {formatRupiah(total)}
+                {formatRupiah(totalAkhir)}
               </span>
             </div>
           </div>

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Penjualan } from "@/app/types/penjualan";
 import { formatRupiah } from "@/helper/format";
-import { FileText } from "lucide-react";
+import { FileText, Printer } from "lucide-react";
 
 interface DialogDetailPenjualanProps {
   open: boolean;
@@ -35,6 +35,45 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
   penjualan,
 }) => {
   if (!penjualan) return null;
+
+  const handlePrintInvoice = async () => {
+    try {
+      const response = await fetch("/api/generate-invoice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(penjualan),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Failed to generate PDF (raw response):", errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          console.error("Failed to generate PDF (parsed):", errorData);
+          throw new Error(
+            `Failed to generate PDF: ${errorData.details || "Unknown error"}`,
+          );
+        } catch (e) {
+          throw new Error(`Failed to generate PDF: ${errorText}`);
+        }
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Invoice_${penjualan.nomorInvoice}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Terjadi kesalahan saat membuat invoice PDF.");
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,10 +89,15 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="grid grid-cols-4 gap-4 p-4 rounded-lg bg-gray-50 border">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-lg bg-gray-50 border">
             <div>
               <p className="text-sm text-gray-500">Pelanggan</p>
               <p className="font-semibold">{penjualan.namaPelanggan}</p>
+              {penjualan.alamatPelanggan}
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Alamat</p>
+              {penjualan.alamatPelanggan}
             </div>
             <div>
               <p className="text-sm text-gray-500">Tanggal</p>
@@ -82,6 +126,11 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
               <p className="font-semibold capitalize">
                 {penjualan.metodePembayaran}
               </p>
+              {penjualan.nomorRekening && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Rek: {penjualan.nomorRekening}
+                </p>
+              )}
             </div>
           </div>
 
@@ -119,12 +168,40 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-end items-center pt-4 border-t">
-            <div className="text-right">
-              <p className="text-lg font-semibold">Total Pembayaran</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {formatRupiah(penjualan.total)}
-              </p>
+          <div className="pt-4 border-t">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 space-y-3">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>Subtotal:</div>
+                <div className="text-right">
+                  {formatRupiah(penjualan.total)}
+                </div>
+                {penjualan.diskon > 0 && (
+                  <>
+                    <div>Diskon:</div>
+                    <div className="text-right text-red-600">
+                      -{formatRupiah(penjualan.diskon)}
+                    </div>
+                  </>
+                )}
+                {penjualan.pajakEnabled && penjualan.pajak > 0 && (
+                  <>
+                    <div>PPN 11%:</div>
+                    <div className="text-right">
+                      {formatRupiah(penjualan.pajak)}
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="border-t pt-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-gray-700">
+                    Total Akhir
+                  </span>
+                  <span className="text-3xl font-bold text-green-600">
+                    {formatRupiah(penjualan.totalAkhir)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -132,6 +209,13 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Tutup
+          </Button>
+          <Button
+            onClick={handlePrintInvoice}
+            className="flex items-center gap-2"
+          >
+            <Printer size={16} />
+            Cetak Invoice
           </Button>
         </DialogFooter>
       </DialogContent>

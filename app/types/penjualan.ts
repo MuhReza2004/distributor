@@ -12,10 +12,16 @@ export interface Penjualan {
   nomorInvoice: string;
   pelangganId: string;
   namaPelanggan: string;
+  alamatPelanggan: string;
   tanggal: string;
   items: PenjualanItem[];
   total: number;
+  diskon: number;
+  pajak: number;
+  totalAkhir: number;
   status: "Lunas" | "Belum Lunas";
   metodePembayaran: "Tunai" | "Transfer";
+  nomorRekening?: string;
+  pajakEnabled: boolean;
   createdAt: Date;
 }
