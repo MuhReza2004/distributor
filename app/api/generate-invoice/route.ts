@@ -149,10 +149,10 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
   <!-- HEADER -->
   <div class="row header">
     <div class="company">
-      <h2>MOM'S ZAHIRAH</h2>
-      <p>Jl. Diponegoro Pasangkayu</p>
-      <p>Telp/HP: 082393400123</p>
-      <p>Email: zahirahmigomsg@gmail.com</p>
+      <h2>PT.SUMBER ALAM PASANGKAYU</h2>
+      <p>Jl. Soekarno Hatta Pasangkayu</p>
+      <p>Telp/HP: 0821-9030-9333</p>
+      <p>Email: sumberalampasangkayu@gmail.com</p>
     </div>
 
     <div class="invoice-box">
@@ -160,7 +160,7 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
       <p>No Invoice: ${penjualan.nomorInvoice}</p>
       <p>Tanggal: ${new Date(penjualan.tanggal).toLocaleDateString("id-ID")}</p>
       <p>Pembayaran: ${penjualan.metodePembayaran}</p>
-      ${penjualan.metodePembayaran === "Transfer" && penjualan.nomorRekening ? `<p>Rekening: ${penjualan.nomorRekening}</p>` : ""}
+      ${penjualan.metodePembayaran === "Transfer" ? `<p>Bank: ${penjualan.namaBank}</p><p>Pemilik Rekening: ${penjualan.namaPemilikRekening}</p>` : ""} ${penjualan.nomorRekening ? `<p>Rekening: ${penjualan.nomorRekening}</p>` : ""}
     </div>
   </div>
 
@@ -170,6 +170,7 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
   <div class="customer">
     <p><strong>Kepada Yth</strong></p>
     <p><strong>Nama</strong>: ${penjualan.namaPelanggan}</p>
+    <p><strong>Toko</strong>: ${penjualan.namaToko}</p>
     <p><strong>Status</strong>: ${penjualan.status}</p>
   </div>
 
@@ -200,6 +201,7 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
       `,
         )
         .join("")}
+
     </tbody>
   </table>
 
@@ -239,7 +241,6 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
 
   <!-- FOOTER -->
   <div class="footer">
-    <p>Terbilang: <em>Tujuh Ratus Ribu Rupiah</em></p>
     <p>Terima kasih atas kepercayaan Anda.</p>
   </div>
 

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { dashboardMenus } from "@/constants/menu";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -26,7 +27,7 @@ export default function Sidebar() {
   if (loading && !timeoutReached) {
     return (
       <aside className="w-64 bg-white border-r">
-        <div className="p-4 font-bold text-lg">Gudang App</div>
+        <div className="p-4 font-bold text-lg">PT. Sumber Alam Pasangkayu</div>
         <nav className="space-y-1 px-2">
           <div className="px-3 py-2 text-sm text-muted-foreground">
             Memuat menu...
@@ -39,13 +40,15 @@ export default function Sidebar() {
   // Tentukan menu yang akan ditampilkan
   // Jika role tidak ada atau timeout/error, gunakan fallback ke admin menu
   let menusToShow = dashboardMenus;
-  
+
   if (role && !timeoutReached && !error) {
     // Filter menu berdasarkan role
     menusToShow = dashboardMenus.filter((menu) => {
       // Handle menu dengan children (jika ada)
-      if ('children' in menu && (menu as any).children) {
-        return (menu as any).children.some((child: any) => child.roles.includes(role));
+      if ("children" in menu && (menu as any).children) {
+        return (menu as any).children.some((child: any) =>
+          child.roles.includes(role),
+        );
       }
       // Handle menu biasa
       return menu.roles.includes(role);
@@ -53,8 +56,10 @@ export default function Sidebar() {
   } else {
     // Fallback: tampilkan menu admin jika role tidak ditemukan
     menusToShow = dashboardMenus.filter((menu) => {
-      if ('children' in menu && (menu as any).children) {
-        return (menu as any).children.some((child: any) => child.roles.includes("admin"));
+      if ("children" in menu && (menu as any).children) {
+        return (menu as any).children.some((child: any) =>
+          child.roles.includes("admin"),
+        );
       }
       return menu.roles.includes("admin");
     });
@@ -62,7 +67,14 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 bg-white border-r">
-      <div className="p-4 font-bold text-lg">Gudang App</div>
+      <Image
+        src="/logo.svg"
+        alt="Logo"
+        width={100}
+        height={100}
+        className="p-4 flex items-center justify-center "
+      />
+      <div className=" font-bold text-lg">PT. Sumber Alam Pasangkayu</div>
 
       {error && (
         <div className="px-4 py-2 text-xs text-yellow-600 bg-yellow-50 border-b">
@@ -74,7 +86,7 @@ export default function Sidebar() {
         {menusToShow.length > 0 ? (
           menusToShow.map((menu) => {
             // Handle nested menu structure (jika ada children)
-            if ('children' in menu && (menu as any).children) {
+            if ("children" in menu && (menu as any).children) {
               return (
                 <div key={menu.label} className="space-y-1">
                   <div

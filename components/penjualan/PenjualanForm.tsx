@@ -57,6 +57,7 @@ export default function PenjualanForm({
 }: PenjualanFormProps) {
   const [pelangganId, setPelangganId] = useState("");
   const [namaPelanggan, setNamaPelanggan] = useState("");
+  const [namaToko, setNamaToko] = useState("");
   const [alamatPelanggan, setAlamatPelanggan] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [produkList, setProdukList] = useState<Produk[]>([]);
@@ -67,6 +68,8 @@ export default function PenjualanForm({
     "Tunai" | "Transfer"
   >("Tunai");
   const [nomorRekening, setNomorRekening] = useState("");
+  const [namaBank, setNamaBank] = useState("");
+  const [namaPemilikRekening, setNamaPemilikRekening] = useState("");
   const [diskon, setDiskon] = useState(0);
   const [pajakEnabled, setPajakEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -75,11 +78,14 @@ export default function PenjualanForm({
   const resetForm = () => {
     setPelangganId("");
     setNamaPelanggan("");
+    setNamaToko("");
     setAlamatPelanggan("");
     setItems([]);
     setStatus("Lunas");
     setMetodePembayaran("Tunai");
-    setNomorRekening("");
+    setNomorRekening("1953017106");
+    setNamaBank("BNI");
+    setNamaPemilikRekening("RIZAL");
     setDiskon(0);
     setPajakEnabled(true);
     setError(null);
@@ -199,6 +205,7 @@ export default function PenjualanForm({
         nomorInvoice: invoiceNumber,
         pelangganId,
         namaPelanggan,
+        namaToko,
         alamatPelanggan,
         tanggal: new Date().toISOString(),
         items,
@@ -212,9 +219,11 @@ export default function PenjualanForm({
         createdAt: new Date(),
       };
 
-      // Only include nomorRekening if payment method is Transfer
+      // Only include bank details if payment method is Transfer
       if (metodePembayaran === "Transfer") {
         penjualanData.nomorRekening = nomorRekening;
+        penjualanData.namaBank = namaBank;
+        penjualanData.namaPemilikRekening = namaPemilikRekening;
       }
 
       await createPenjualan(penjualanData);
@@ -284,6 +293,7 @@ export default function PenjualanForm({
                   if (p) {
                     setPelangganId(p.id);
                     setNamaPelanggan(p.namePelanggan);
+                    setNamaToko(p.namaToko);
                     setAlamatPelanggan(p.alamat || "");
                   }
                 }}
@@ -344,18 +354,40 @@ export default function PenjualanForm({
               </Select>
             </div>
 
-            {/* Nomor Rekening - hanya muncul jika Transfer */}
+            {/* Bank Details - hanya muncul jika Transfer */}
             {metodePembayaran === "Transfer" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-foreground">
-                  Nomor Rekening
-                </Label>
-                <Input
-                  value={nomorRekening}
-                  onChange={(e) => setNomorRekening(e.target.value)}
-                  placeholder="Masukkan nomor rekening"
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-foreground">
+                    Nama Bank
+                  </Label>
+                  <Input
+                    value={namaBank}
+                    onChange={(e) => setNamaBank(e.target.value)}
+                    placeholder="Masukkan nama bank"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-foreground">
+                    Nama Pemilik Rekening
+                  </Label>
+                  <Input
+                    value={namaPemilikRekening}
+                    onChange={(e) => setNamaPemilikRekening(e.target.value)}
+                    placeholder="Masukkan nama pemilik rekening"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-foreground">
+                    Nomor Rekening
+                  </Label>
+                  <Input
+                    value={nomorRekening}
+                    onChange={(e) => setNomorRekening(e.target.value)}
+                    placeholder="Masukkan nomor rekening"
+                  />
+                </div>
+              </>
             )}
 
             {/* Diskon */}

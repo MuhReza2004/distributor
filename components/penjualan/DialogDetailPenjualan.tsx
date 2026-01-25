@@ -121,17 +121,27 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
                 {penjualan.status}
               </Badge>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Metode Pembayaran</p>
-              <p className="font-semibold capitalize">
-                {penjualan.metodePembayaran}
+          </div>
+          <div>
+            <p className="text-sm text-black font-bold">Metode Pembayaran</p>
+            <p className="font-semibold capitalize">
+              {penjualan.metodePembayaran}
+            </p>
+            {penjualan.nomorRekening && (
+              <p className="text-xs text-gray-600 mt-1">
+                Nama Bank: {penjualan.namaBank}
               </p>
-              {penjualan.nomorRekening && (
-                <p className="text-xs text-gray-600 mt-1">
-                  Rek: {penjualan.nomorRekening}
-                </p>
-              )}
-            </div>
+            )}
+            {penjualan.nomorRekening && (
+              <p className="text-xs text-gray-600 mt-1">
+                Nama Pemilik Rekening: {penjualan.namaPemilikRekening}
+              </p>
+            )}
+            {penjualan.nomorRekening && (
+              <p className="text-xs text-gray-600 mt-1">
+                Nomor Rekening: {penjualan.nomorRekening}
+              </p>
+            )}
           </div>
 
           <div>
