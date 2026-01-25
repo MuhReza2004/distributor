@@ -1,6 +1,7 @@
 "use client";
 
 import { Pembelian } from "@/app/types/pembelian";
+import { formatRupiah } from "@/helper/format";
 import {
   Table,
   TableBody,
@@ -29,7 +30,8 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
             <TableCell>{p.nomorDO}</TableCell>
             <TableCell>{p.supplierNama}</TableCell>
             <TableCell>{new Date(p.tanggal).toLocaleDateString()}</TableCell>
-            <TableCell>Rp {p.total}</TableCell>
+            <TableCell>{formatRupiah(p.total)}</TableCell>{" "}
+            {/* Diubah: Gunakan formatRupiah */}
           </TableRow>
         ))}
       </TableBody>

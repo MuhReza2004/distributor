@@ -109,18 +109,6 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
       alert("Pilih supplier terlebih dahulu");
       return;
     }
-    if (!npb) {
-      alert("NPB harus diisi");
-      return;
-    }
-    if (!nomorDO) {
-      alert("Nomor DO harus diisi");
-      return;
-    }
-    if (!nomorKontrak) {
-      alert("Nomor Kontrak harus diisi");
-      return;
-    }
     if (items.some((item) => !item.produkId || !item.qty)) {
       alert("Pastikan semua produk dan kuantitas terisi");
       return;
@@ -253,15 +241,15 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
                 </Select>
 
                 <Input
-                  type="number"
+                  type="text"
                   min={1}
                   value={item.qty}
                   onChange={(e) => updateItem(i, "qty", Number(e.target.value))}
                   placeholder="Qty"
                 />
                 <Input
-                  type="number"
-                  value={item.hargaBeli}
+                  type="text"
+                  value={"Rp " + item.hargaBeli.toLocaleString("id-ID")}
                   onChange={(e) =>
                     updateItem(i, "hargaBeli", Number(e.target.value))
                   }
