@@ -247,6 +247,9 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
                 })}
                 className={errors.stok ? "border-red-500" : ""}
               />
+              <p className="text-sm text-gray-500">
+                Ket: Stok awal diisi jika produk sudah tersedia
+              </p>
               {errors.stok && (
                 <p className="text-sm text-red-500">{errors.stok.message}</p>
               )}

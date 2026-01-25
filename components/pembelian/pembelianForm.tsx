@@ -200,13 +200,13 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
               </SelectContent>
             </Select>
           </div>
-          <Button
+          {/* <Button
             onClick={() => setIsTambahProdukOpen(true)}
             disabled={!supplierId}
             variant="secondary"
           >
             + Tambah Produk Baru
-          </Button>
+          </Button> */}
         </div>
 
         <div className="grid grid-cols-4 gap-4">
