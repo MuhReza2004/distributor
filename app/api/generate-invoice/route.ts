@@ -98,260 +98,591 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
   });
 
   const page = await browser.newPage();
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  await page.setExtraHTTPHeaders({
+    Accept:
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+  });
+
   const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <title>Invoice ${penjualan.nomorInvoice}</title>
-  <style>
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      margin: 40px;
-      color: #333;
-      font-size: 12px;
-    }
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Invoice ${penjualan.nomorInvoice}</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-    .row {
+      body {
+        font-family: 'Arial', 'Helvetica', sans-serif;
+        padding: 30px 40px;
+        color: #333;
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .container {
+        max-width: 100%;
+      }
+
+      /* Header Section */
+      .header {
+        display: flex;
+        
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #2c5282;
+      }
+
+      .company-section {
+        flex: 1;
+      }
+      .company-item {
       display: flex;
-      justify-content: space-between;
-    }
-
-    .header {
-      margin-bottom: 30px;
-    }
-
-    .company h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    .company p {
+      font-size:12px;
+      color: #555;
       margin: 2px 0;
-      font-size: 11px;
-    }
-
-    .invoice-box {
-      text-align: right;
-    }
-
-    .invoice-box h1 {
-      margin: 0;
-      font-size: 28px;
-      letter-spacing: 2px;
-    }
-
-    .invoice-box p {
-      margin: 4px 0;
-      font-size: 11px;
-    }
-
-    .divider {
-      border-top: 2px solid #000;
-      margin: 20px 0;
-    }
-
-    .customer {
-      margin-bottom: 20px;
-    }
-
-    .customer strong {
-      display: inline-block;
-      width: 120px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-
-    thead {
-      background: #f2f2f2;
-    }
-
-    th {
-      text-align: left;
-      padding: 8px;
-      border-bottom: 2px solid #000;
-      font-size: 12px;
-    }
-
-    td {
-      padding: 8px;
-      border-bottom: 1px solid #ddd;
-    }
-
-    .text-right {
-      text-align: right;
-    }
-
-    .text-center {
-      text-align: center;
-    }
-
-    .summary {
-      width: 40%;
-      margin-left: auto;
-      margin-top: 20px;
-    }
-
-    .summary table {
-      width: 100%;
-    }
-
-    .summary td {
-      padding: 6px;
-      border: none;
-    }
-
-    .summary tr:last-child td {
-      border-top: 2px solid #000;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .total-highlight {
-      font-size: 28px;
-      font-weight: bold;
-      text-align: right;
-      margin-top: 10px;
-    }
-
-    .footer {
-      margin-top: 40px;
-      font-size: 11px;
-    }
-
-    .sign {
-      margin-top: 60px;
-      display: flex;
-      justify-content: space-between;
-      text-align: center;
-    }
-  </style>
-</head>
-
-<body>
-
-  <!-- HEADER -->
-  <div class="row header">
-    <div class="company">
-      <h2>PT.SUMBER ALAM PASANGKAYU</h2>
-      <p>Jl. Soekarno Hatta Pasangkayu</p>
-      <p>Telp/HP: 0821-9030-9333</p>
-      <p>Email: sumberalampasangkayu@gmail.com</p>
-    </div>
-
-    <div class="invoice-box">
-      <h1>INVOICE</h1>
-      <p>No Invoice: ${penjualan.nomorInvoice}</p>
-      <p>Tanggal: ${new Date(penjualan.tanggal).toLocaleDateString("id-ID")}</p>
-      <p>Pembayaran: ${penjualan.metodePembayaran}</p>
-      ${penjualan.metodePembayaran === "Transfer" ? `<p>Bank: ${penjualan.namaBank}</p><p>Pemilik Rekening: ${penjualan.namaPemilikRekening}</p>` : ""} ${penjualan.nomorRekening ? `<p>Rekening: ${penjualan.nomorRekening}</p>` : ""}
-    </div>
-  </div>
-
-  <div class="divider"></div>
-
-  <!-- CUSTOMER -->
-  <div class="customer">
-    <p><strong>Kepada Yth</strong></p>
-    <p><strong>Nama</strong>: ${penjualan.namaPelanggan}</p>
-    <p><strong>Toko</strong>: ${penjualan.namaToko}</p>
-    <p><strong>Status</strong>: ${penjualan.status}</p>
-  </div>
-
-  <!-- TABLE -->
-  <table>
-    <thead>
-      <tr>
-        <th class="text-center">No</th>
-        <th>Nama Produk</th>
-        <th class="text-center">Qty</th>
-        <th class="text-center">Satuan</th>
-        <th class="text-right">Harga</th>
-        <th class="text-right">Jumlah</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${penjualan.items
-        .map(
-          (item, i) => `
-        <tr>
-          <td class="text-center">${i + 1}</td>
-          <td>${item.namaProduk}</td>
-          <td class="text-center">${item.qty}</td>
-          <td class="text-center">${item.satuan}</td>
-          <td class="text-right">Rp ${item.hargaJual.toLocaleString("id-ID")}</td>
-          <td class="text-right">Rp ${item.subtotal.toLocaleString("id-ID")}</td>
-        </tr>
-      `,
-        )
-        .join("")}
-
-    </tbody>
-  </table>
-
-  <!-- TERBILANG -->
-  <div style="margin-top: 20px;font-size: 14px;">
-    <p><strong>Terbilang:</strong> ${numberToWords(Math.floor(penjualan.totalAkhir))} rupiah</p>
-  </div>
-
-  <!-- SUMMARY -->
-  <div class="summary">
-    <table>
-      <tr>
-        <td>Subtotal</td>
-        <td class="text-right">Rp ${penjualan.total.toLocaleString("id-ID")}</td>
-      </tr>
-      ${
-        penjualan.diskon > 0
-          ? `<tr>
-        <td>Diskon</td>
-        <td class="text-right">-Rp ${penjualan.diskon.toLocaleString("id-ID")}</td>
-      </tr>`
-          : ""
       }
-      ${
-        penjualan.pajakEnabled && penjualan.pajak > 0
-          ? `<tr>
-        <td>PPN 11%</td>
-        <td class="text-right">Rp ${penjualan.pajak.toLocaleString("id-ID")}</td>
-      </tr>`
-          : ""
+      
+      .company-item .label {
+      width: 70px;
+      position: relative;
+      font-weight: 600;
       }
-      <tr>
-        <td>Total Akhir</td>
-        <td class="text-right">Rp ${penjualan.totalAkhir.toLocaleString("id-ID")}</td>
-      </tr>
-    </table>
-  </div>
 
-  <div class="total-highlight">
-    Rp ${penjualan.totalAkhir.toLocaleString("id-ID")}
-  </div>
+      .company-item .label::after{
+      content: ":";
+      position: absolute;
+      right: 0;
+      }
 
-  <!-- FOOTER -->
-  <div class="footer">
-    <p>Terima kasih atas kepercayaan Anda.</p>
-  </div>
+      .company-item .value {
+      margin-left: 5px;
+      }
 
-  <div class="sign">
-    <div>
-      Hormat Kami,<br /><br /><br />
-      ( Pimpinan PT.SUMBER ALAM PASANGKAYU )
+      .company-header {
+        display: flex;
+        align-items: center;
+        margin-top: 8px;
+        gap: 15px;
+        margin-bottom: 8px;
+      }
+
+      .logo-container {
+        width: 70px;
+        height: 70px;
+        flex-shrink: 0;
+      }
+
+      .logo-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .company-header h2 {
+        font-size: 15px;
+        font-weight: bold;
+        color: #2c5282;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+
+      .company-details {
+        margin-top: 20px;
+        
+      }
+
+      .company-details p {
+        position: relative;
+        font-size: 12px;
+        color: #555;
+        margin: 2px 0;
+        line-height: 1.4;
+      }
+
+.invoice-item {
+  display: flex;
+  font-size:12px;
+  color: #555;
+  margin: 2px 0;
+}
+      
+.invoice-item .label {
+  width: 100px;
+  position: relative;
+  font-weight: 600;
+}
+.invoice-item .label::after {
+  content: ": ";
+  position: absolute;
+  right: 0;
+}
+
+.invoice-item .value {
+  margin-left: 5px;
+}
+      
+
+
+      .invoice-section {
+        text-align: left;
+        min-width: 280px;
+      }
+
+      .invoice-section h1 {
+        font-size: 32px;
+        font-weight: bold;
+        text-align: right;
+        color: #2c5282;
+        margin-bottom: 12px;
+        letter-spacing: 3px;
+      }
+
+      .invoice-meta {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 5px;
+        border-left: 4px solid #2c5282;
+      }
+
+      .invoice-meta p {
+        font-size: 11px;
+        margin: 4px 0;
+        color: #333;
+      }
+
+      .invoice-meta strong {
+        color: #2c5282;
+        font-weight: 600;
+      }
+
+      /* Customer & Amount Section */
+      .customer-amount-section {
+        display: flex;
+        justify-content: space-between;
+        gap: 30px;
+        margin-bottom: 25px;
+      }
+
+      .customer-section {
+        flex: 1;
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+      }
+
+      .customer-section p {
+        font-size: 11px;
+        margin: 5px 0;
+        color: #333;
+      }
+
+      .customer-section p:first-child {
+        font-weight: bold;
+        color: #2c5282;
+        margin-bottom: 8px;
+        font-size: 11px;
+      }
+
+      .customer-item {
+        display: flex;
+        margin: 5px 0;
+        font-size: 11px;
+        color: #333;
+      }
+
+      .label {
+        width: 70px;
+        position: relative;
+        text-align: left;
+        font-weight: 600;
+        color: #555;
+      }
+      
+      .label::after {
+        content: ":";
+        position: absolute;
+        right: 0;
+      }
+
+      .value {
+        flex: 1;
+        margin-left:5px 
+      }
+
+      .amount-highlight {
+        min-width: 280px;
+        background:  #fff9e6;
+        padding: 20px;
+        
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      }
+
+      .amount-highlight p:first-child {
+        font-size: 11px;
+        color: #000000;
+        margin-bottom: 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .amount-highlight .amount {
+        font-size: 28px;
+        font-weight: bold;
+        color: #000000;
+        letter-spacing: 1px;
+      }
+
+      /* Table Section */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+
+      thead {
+        background: #2c5282;
+        color: white;
+      }
+
+      th {
+        padding: 12px 10px;
+        text-align: left;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      td {
+        padding: 10px;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 11px;
+      }
+
+      tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 2px solid #2c5282;
+      }
+
+      .text-center {
+        text-align: center;
+      }
+
+      .text-right {
+        text-align: right;
+      }
+
+      /* Terbilang Section */
+      .terbilang-section {
+        background: #fff9e6;
+        padding: 12px 15px;
+        margin: 20px 0;
+        border-radius: 5px;
+        border-left: 4px solid #ffc107;
+      }
+
+      .terbilang-section p {
+        font-size: 11px;
+        color: #333;
+        font-style: italic;
+      }
+
+      .terbilang-section strong {
+        color: #f57c00;
+        font-weight: 600;
+      }
+
+      /* Summary Section */
+      .summary-container {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 20px;
+      }
+
+      .summary-table {
+        width: 350px;
+      }
+
+      .summary-table table {
+        width: 100%;
+        margin: 0;
+      }
+
+      .summary-table td {
+        padding: 8px 12px;
+        border: none;
+        font-size: 11px;
+      }
+
+      .summary-table tr {
+        background: #f8f9fa;
+      }
+
+      .summary-table tr:last-child {
+        background: #2c5282;
+        color: white;
+        font-weight: bold;
+        font-size: 13px;
+      }
+
+      .summary-table tr:last-child td {
+        padding: 12px;
+        border-top: 2px solid #1a365d;
+      }
+
+      /* Footer Section */
+      .footer-notes {
+        margin-top: 30px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 5px;
+      }
+
+      .footer-notes p {
+        font-size: 10px;
+        color: #555;
+        margin: 3px 0;
+        line-height: 1.6;
+      }
+
+      .footer-notes strong {
+        color: #2c5282;
+      }
+
+      /* Signature Section */
+      .signature-section {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 50px;
+        padding-top: 20px;
+      }
+
+      .signature-box {
+        text-align: center;
+        width: 220px;
+      }
+
+      .signature-box p {
+        font-size: 11px;
+        margin-bottom: 50px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .signature-line {
+        border-top: 1px solid #333;
+        padding-top: 8px;
+        font-size: 10px;
+        color: #555;
+      }
+
+      /* Utility Classes */
+      .bold {
+        font-weight: 600;
+      }
+
+      .mb-10 {
+        margin-bottom: 10px;
+      }
+
+      .mb-20 {
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      
+      <!-- HEADER -->
+      <div class="header">
+        <div class="company-section">
+          <div class="company-header">
+            <div class="logo-container">
+              <img src="${baseUrl}/logo.svg" alt="Logo" onerror="this.style.display='none'" />
+            </div>
+            <h2>PT. Sumber Alam Pasangkayu</h2>
+          </div>
+          <div class="company-details">
+            <div class="company-item">
+            <span class="label">Alamat</span>
+            <span class="value">Jl. Soekarno Hatta Pasangkayu</span>
+          </div>
+            <div class="company-item">
+            <span class="label">Kontak</span>
+            <span class="value">0821-9030-9333</span>
+          </div>
+            <div class="company-item">
+            <span class="label">Email</span>
+            <span class="value">sumberalampasangkayu@gmail.com</span>
+          </div>
+            </div>
+        </div>
+
+        <div class="invoice-section">
+          <h1>INVOICE</h1>
+          <div class="invoice-meta">
+        <div class="invoice-item">
+          <span class="label">No Invoice</span>
+          <span class="value">${penjualan.nomorInvoice}</span>
+        </div>
+        <div class="invoice-item">
+          <span class="label">Tanggal</span>
+          <span class="value">${new Date(penjualan.tanggal).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}</span>
+        </div>
+        <div class="invoice-item">
+          <span class="label">Pembayaran</span>
+          <span class="value">${penjualan.metodePembayaran}</span>
+        </div>
+        <div class="invoice-item">
+          <span class="label">Bank</span>
+          <span class="value">BNI</span>
+        </div>
+        <div class="invoice-item">
+          <span class="label">A/n</span>
+          <span class="value">RIZAL</span>
+        </div>
+        <div class="invoice-item">
+          <span class="label">No Rek</span>
+          <span class="value">1953017106</span>
+        </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CUSTOMER & AMOUNT -->
+      <div class="customer-amount-section">
+        <div class="customer-section">
+          <p>Kepada Yth.</p>
+          <div class="customer-item">
+            <span class="label">Nama</span>
+            <span class="value">${penjualan.namaPelanggan}</span>
+          </div>
+          <div class="customer-item">
+            <span class="label">Toko</span>
+            <span class="value">${penjualan.namaToko || "-"}</span>
+          </div>
+          <div class="customer-item">
+            <span class="label">Status</span>
+            <span class="value">${penjualan.status}</span>
+          </div>
+        </div>
+
+        <div class="amount-highlight">
+          <p>Total Yang Harus Dibayar</p>
+          <div class="amount">Rp ${penjualan.totalAkhir.toLocaleString("id-ID")}</div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <table>
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 40px;">No</th>
+            <th>Nama Produk</th>
+            <th class="text-center" style="width: 60px;">Qty</th>
+            <th class="text-center" style="width: 70px;">Satuan</th>
+            <th class="text-right" style="width: 120px;">Harga</th>
+            <th class="text-right" style="width: 120px;">Jumlah</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${penjualan.items
+            .map(
+              (item, i) => `
+            <tr>
+              <td class="text-center">${i + 1}</td>
+              <td><strong>${item.namaProduk}</strong></td>
+              <td class="text-center">${item.qty}</td>
+              <td class="text-center">${item.satuan}</td>
+              <td class="text-right">Rp ${item.hargaJual.toLocaleString("id-ID")}</td>
+              <td class="text-right"><strong>Rp ${item.subtotal.toLocaleString("id-ID")}</strong></td>
+            </tr>
+          `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+
+      <!-- TERBILANG -->
+      <div class="terbilang-section">
+        <p><strong>Terbilang:</strong> <em>${numberToWords(Math.floor(penjualan.totalAkhir))}</em></p>
+      </div>
+
+      <!-- SUMMARY -->
+      <div class="summary-container">
+        <div class="summary-table">
+          <table>
+            <tr>
+              <td>Subtotal</td>
+              <td class="text-right">Rp ${penjualan.total.toLocaleString("id-ID")}</td>
+            </tr>
+            ${
+              penjualan.diskon > 0
+                ? `
+              <tr>
+                <td>Diskon</td>
+                <td class="text-right">- Rp ${penjualan.diskon.toLocaleString("id-ID")}</td>
+              </tr>
+            `
+                : ""
+            }
+            ${
+              penjualan.pajakEnabled && penjualan.pajak > 0
+                ? `
+              <tr>
+                <td>PPN 11%</td>
+                <td class="text-right">Rp ${penjualan.pajak.toLocaleString("id-ID")}</td>
+              </tr>
+            `
+                : ""
+            }
+            <tr>
+              <td><strong>TOTAL</strong></td>
+              <td class="text-right"><strong>Rp ${penjualan.totalAkhir.toLocaleString("id-ID")}</strong></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- FOOTER NOTES -->
+      <div class="footer-notes">
+        <p><strong>Terima kasih atas kepercayaan Anda.</strong></p>
+        <p>Mohon simpan dokumen ini sebagai bukti transaksi yang sah.</p>
+        <p style="font-style: italic; margin-top: 8px;">Dokumen ini dibuat secara elektronik dan sah tanpa tanda tangan basah.</p>
+      </div>
+
+      <!-- SIGNATURE -->
+      <div class="signature-section">
+        <div class="signature-box">
+          <p>Hormat Kami,</p>
+          <div class="signature-line">PT. Sumber Alam Pasangkayu</div>
+        </div>
+        <div class="signature-box">
+          <p>Diterima Oleh,</p>
+          <div class="signature-line">( ${penjualan.namaPelanggan} )</div>
+        </div>
+      </div>
+
     </div>
-    <div>
-      Diterima Oleh,<br /><br /><br />
-      ( _____________ )
-    </div>
-  </div>
-
-</body>
-</html>
-`;
+  </body>
+  </html>
+  `;
 
   await page.setContent(htmlContent, { waitUntil: "networkidle0" });
 
@@ -359,10 +690,10 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
     format: "A4",
     printBackground: true,
     margin: {
-      top: "50px",
-      right: "50px",
-      bottom: "50px",
-      left: "50px",
+      top: "20px",
+      right: "30px",
+      bottom: "20px",
+      left: "30px",
     },
   });
 

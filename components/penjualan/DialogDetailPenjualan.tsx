@@ -36,7 +36,7 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
 }) => {
   if (!penjualan) return null;
 
-  const handlePreviewInvoice = async () => {
+  const handlePrintInvoice = async () => {
     try {
       const response = await fetch("/api/generate-invoice", {
         method: "POST",
@@ -66,45 +66,6 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Terjadi kesalahan saat membuat preview invoice PDF.");
-    }
-  };
-
-  const handlePrintInvoice = async () => {
-    try {
-      const response = await fetch("/api/generate-invoice", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(penjualan),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Failed to generate PDF (raw response):", errorText);
-        try {
-          const errorData = JSON.parse(errorText);
-          console.error("Failed to generate PDF (parsed):", errorData);
-          throw new Error(
-            `Failed to generate PDF: ${errorData.details || "Unknown error"}`,
-          );
-        } catch (e) {
-          throw new Error(`Failed to generate PDF: ${errorText}`);
-        }
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Invoice_${penjualan.nomorInvoice}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Terjadi kesalahan saat membuat invoice PDF.");
     }
   };
 
