@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Penjualan } from "@/app/types/penjualan";
 import { formatRupiah } from "@/helper/format";
-import { FileText, Printer } from "lucide-react";
+import { FileText, Printer, Eye } from "lucide-react";
 
 interface DialogDetailPenjualanProps {
   open: boolean;
@@ -35,6 +35,39 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
   penjualan,
 }) => {
   if (!penjualan) return null;
+
+  const handlePreviewInvoice = async () => {
+    try {
+      const response = await fetch("/api/generate-invoice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(penjualan),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Failed to generate PDF (raw response):", errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          console.error("Failed to generate PDF (parsed):", errorData);
+          throw new Error(
+            `Failed to generate PDF: ${errorData.details || "Unknown error"}`,
+          );
+        } catch (e) {
+          throw new Error(`Failed to generate PDF: ${errorText}`);
+        }
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Terjadi kesalahan saat membuat preview invoice PDF.");
+    }
+  };
 
   const handlePrintInvoice = async () => {
     try {

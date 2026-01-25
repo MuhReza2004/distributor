@@ -2,6 +2,95 @@ import { NextRequest, NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import { Penjualan } from "@/app/types/penjualan";
 
+function numberToWords(num: number): string {
+  const units = [
+    "",
+    "satu",
+    "dua",
+    "tiga",
+    "empat",
+    "lima",
+    "enam",
+    "tujuh",
+    "delapan",
+    "sembilan",
+  ];
+  const teens = [
+    "sepuluh",
+    "sebelas",
+    "dua belas",
+    "tiga belas",
+    "empat belas",
+    "lima belas",
+    "enam belas",
+    "tujuh belas",
+    "delapan belas",
+    "sembilan belas",
+  ];
+  const tens = [
+    "",
+    "",
+    "dua puluh",
+    "tiga puluh",
+    "empat puluh",
+    "lima puluh",
+    "enam puluh",
+    "tujuh puluh",
+    "delapan puluh",
+    "sembilan puluh",
+  ];
+  const thousands = ["", "ribu", "juta", "miliar", "triliun"];
+
+  if (num === 0) return "nol";
+
+  function convertHundreds(n: number): string {
+    let str = "";
+    const h = Math.floor(n / 100);
+    const t = Math.floor((n % 100) / 10);
+    const u = n % 10;
+
+    if (h > 0) {
+      if (h === 1) str += "seratus ";
+      else str += units[h] + " ratus ";
+    }
+
+    if (t > 0) {
+      if (t === 1) {
+        str += teens[u] + " ";
+        return str.trim();
+      } else {
+        str += tens[t] + " ";
+      }
+    }
+
+    if (u > 0) {
+      str += units[u] + " ";
+    }
+
+    return str.trim();
+  }
+
+  let result = "";
+  let tempNum = num;
+  let thousandIndex = 0;
+
+  while (tempNum > 0) {
+    const chunk = tempNum % 1000;
+    if (chunk > 0) {
+      const chunkWords = convertHundreds(chunk);
+      if (thousandIndex === 1 && chunk === 1) {
+        result = "seribu " + result;
+      } else if (chunkWords) {
+        result = chunkWords + " " + thousands[thousandIndex] + " " + result;
+      }
+    }
+    tempNum = Math.floor(tempNum / 1000);
+    thousandIndex++;
+  }
+
+  return result.trim() + " rupiah";
+}
+
 async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
   const browser = await puppeteer.launch({
     headless: true,
@@ -205,6 +294,11 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
     </tbody>
   </table>
 
+  <!-- TERBILANG -->
+  <div style="margin-top: 20px;font-size: 14px;">
+    <p><strong>Terbilang:</strong> ${numberToWords(Math.floor(penjualan.totalAkhir))} rupiah</p>
+  </div>
+
   <!-- SUMMARY -->
   <div class="summary">
     <table>
@@ -247,7 +341,7 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
   <div class="sign">
     <div>
       Hormat Kami,<br /><br /><br />
-      ( MOM'S ZAHIRAH )
+      ( Pimpinan PT.SUMBER ALAM PASANGKAYU )
     </div>
     <div>
       Diterima Oleh,<br /><br /><br />
