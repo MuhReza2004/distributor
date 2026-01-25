@@ -668,13 +668,13 @@ export default function PenjualanForm({
         </div>
 
         <DialogFooter className="border-t pt-4">
-          <Button
+          {/* <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
             Batal
-          </Button>
+          </Button> */}
           <Button
             onClick={submit}
             disabled={isLoading || !pelangganId || items.length === 0}
@@ -683,12 +683,12 @@ export default function PenjualanForm({
             {isLoading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                Menyimpan...
+                Memproses...
               </>
             ) : (
               <>
                 <Receipt className="h-4 w-4 mr-2" />
-                Simpan Penjualan
+                Proses
               </>
             )}
           </Button>

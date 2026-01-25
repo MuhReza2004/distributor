@@ -24,11 +24,6 @@ interface DialogTambahProdukProps {
   isLoading?: boolean;
 }
 
-const KATEGORI_OPTIONS = [
-  { value: "Sembako", label: "Sembako" },
-  { value: "lainnya", label: "Lainnya" },
-];
-
 const SATUAN_OPTIONS = [
   { value: "Sak", label: "Sak" },
   { value: "Pcs", label: "Pcs" },
@@ -131,22 +126,17 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="kategori" className="font-semibold">
-                Kategori *
+              <Label htmlFor="nameProduk" className="font-semibold">
+                Kategory *
               </Label>
-              <select
-                id="kategori"
+              <Input
+                id="kategory"
+                placeholder="Masukkan Kategory"
                 {...register("kategori", {
-                  required: "Kategori wajib dipilih",
+                  required: "Kategori wajib diisi",
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {KATEGORI_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                className={errors.kategori ? "border-red-500" : ""}
+              />
               {errors.kategori && (
                 <p className="text-sm text-red-500">
                   {errors.kategori.message}

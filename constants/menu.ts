@@ -20,7 +20,7 @@ export const dashboardMenus: MenuItem[] = [
     roles: ["admin"],
   },
   {
-    label: "produk",
+    label: "Produk",
     href: "/dashboard/admin/produk",
     roles: ["admin"],
   },
