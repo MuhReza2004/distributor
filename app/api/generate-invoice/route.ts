@@ -561,6 +561,16 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
           <span class="label">No Rek</span>
           <span class="value">1953017106</span>
         </div>
+        ${
+          penjualan.status === "Belum Lunas" && penjualan.tanggalJatuhTempo
+            ? `
+        <div class="invoice-item">
+          <span class="label">Jatuh Tempo</span>
+          <span class="value">${new Date(penjualan.tanggalJatuhTempo).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}</span>
+        </div>
+        `
+            : ""
+        }
           </div>
         </div>
       </div>

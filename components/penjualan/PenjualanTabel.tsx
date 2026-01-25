@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Penjualan } from "@/app/types/penjualan";
 import { formatRupiah } from "@/helper/format";
-import { Eye } from "lucide-react";
+import { Eye, Edit, X } from "lucide-react";
 
 interface PenjualanTabelProps {
   data: Penjualan[];
@@ -21,6 +21,8 @@ interface PenjualanTabelProps {
   error: string | null;
   onViewDetails: (penjualan: Penjualan) => void;
   onUpdateStatus: (id: string, status: "Lunas" | "Belum Lunas") => void;
+  onEdit: (penjualan: Penjualan) => void;
+  onCancel: (id: string) => void;
 }
 
 export default function PenjualanTabel({
@@ -29,6 +31,8 @@ export default function PenjualanTabel({
   error,
   onViewDetails,
   onUpdateStatus,
+  onEdit,
+  onCancel,
 }: PenjualanTabelProps) {
   if (isLoading) {
     return (
@@ -81,7 +85,7 @@ export default function PenjualanTabel({
               <TableCell>{penjualan.namaPelanggan}</TableCell>
               <TableCell>{penjualan.items[0].namaProduk}</TableCell>
               <TableCell className="text-right">
-                {formatRupiah(penjualan.total)}
+                {formatRupiah(penjualan.totalAkhir)}
               </TableCell>
 
               {/* === STATUS BADGE (DIPERBAIKI) === */}
@@ -106,6 +110,22 @@ export default function PenjualanTabel({
                     onClick={() => onViewDetails(penjualan)}
                   >
                     <Eye className="w-4 h-4" />
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit(penjualan)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onCancel(penjualan.id!)}
+                  >
+                    <X className="w-4 h-4" />
                   </Button>
 
                   {penjualan.status === "Belum Lunas" && (

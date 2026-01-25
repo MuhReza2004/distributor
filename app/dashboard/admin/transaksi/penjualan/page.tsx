@@ -8,7 +8,10 @@ import { DialogDetailPenjualan } from "@/components/penjualan/DialogDetailPenjua
 import { onSnapshot, collection, query, orderBy } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { Button } from "@/components/ui/button";
-import { updatePenjualanStatus } from "@/app/services/penjualan.service";
+import {
+  updatePenjualanStatus,
+  deletePenjualan,
+} from "@/app/services/penjualan.service";
 import { Plus } from "lucide-react";
 
 export default function PenjualanPage() {
@@ -18,6 +21,9 @@ export default function PenjualanPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [dialogDetailOpen, setDialogDetailOpen] = useState(false);
   const [selectedPenjualan, setSelectedPenjualan] = useState<Penjualan | null>(
+    null,
+  );
+  const [editingPenjualan, setEditingPenjualan] = useState<Penjualan | null>(
     null,
   );
 
@@ -61,6 +67,27 @@ export default function PenjualanPage() {
     }
   };
 
+  const handleEdit = (penjualan: Penjualan) => {
+    setEditingPenjualan(penjualan);
+    setIsFormOpen(true);
+  };
+
+  const handleCancel = async (id: string) => {
+    if (
+      confirm(
+        "Apakah Anda yakin ingin membatalkan transaksi ini? Stok produk akan dikembalikan.",
+      )
+    ) {
+      try {
+        await deletePenjualan(id);
+        alert("Transaksi berhasil dibatalkan dan stok telah dikembalikan.");
+      } catch (error) {
+        console.error("Error canceling transaction:", error);
+        alert("Gagal membatalkan transaksi.");
+      }
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -75,8 +102,17 @@ export default function PenjualanPage() {
 
       <PenjualanForm
         open={isFormOpen}
-        onOpenChange={setIsFormOpen}
-        onSuccess={() => setIsFormOpen(false)}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) {
+            setEditingPenjualan(null);
+          }
+        }}
+        onSuccess={() => {
+          setIsFormOpen(false);
+          setEditingPenjualan(null);
+        }}
+        editingPenjualan={editingPenjualan}
       />
 
       <PenjualanTabel
@@ -85,6 +121,8 @@ export default function PenjualanPage() {
         error={error}
         onViewDetails={handleViewDetails}
         onUpdateStatus={handleUpdateStatus}
+        onEdit={handleEdit}
+        onCancel={handleCancel}
       />
       <DialogDetailPenjualan
         open={dialogDetailOpen}

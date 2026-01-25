@@ -26,5 +26,6 @@ export interface Penjualan {
   namaBank?: string;
   namaPemilikRekening?: string;
   pajakEnabled: boolean;
+  tanggalJatuhTempo?: string;
   createdAt: Date;
 }

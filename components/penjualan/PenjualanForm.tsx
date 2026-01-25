@@ -3,9 +3,10 @@
 import { useEffect, useState, useMemo } from "react";
 import {
   createPenjualan,
+  updatePenjualan,
   generateInvoiceNumber,
 } from "@/app/services/penjualan.service";
-import { PenjualanItem } from "@/app/types/penjualan";
+import { PenjualanItem, Penjualan } from "@/app/types/penjualan";
 import { Produk } from "@/app/types/produk";
 import { Pelanggan } from "@/app/types/pelanggan";
 import { Button } from "@/components/ui/button";
@@ -48,12 +49,14 @@ interface PenjualanFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  editingPenjualan?: Penjualan | null;
 }
 
 export default function PenjualanForm({
   open,
   onOpenChange,
   onSuccess,
+  editingPenjualan,
 }: PenjualanFormProps) {
   const [pelangganId, setPelangganId] = useState("");
   const [namaPelanggan, setNamaPelanggan] = useState("");
@@ -72,6 +75,7 @@ export default function PenjualanForm({
   const [namaPemilikRekening, setNamaPemilikRekening] = useState("");
   const [diskon, setDiskon] = useState(0);
   const [pajakEnabled, setPajakEnabled] = useState(true);
+  const [tanggalJatuhTempo, setTanggalJatuhTempo] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,13 +92,35 @@ export default function PenjualanForm({
     setNamaPemilikRekening("RIZAL");
     setDiskon(0);
     setPajakEnabled(true);
+    setTanggalJatuhTempo("");
     setError(null);
-    generateInvoiceNumber().then(setInvoiceNumber);
+    if (!editingPenjualan) {
+      generateInvoiceNumber().then(setInvoiceNumber);
+    }
   };
 
   useEffect(() => {
     if (open) {
-      resetForm();
+      if (editingPenjualan) {
+        // Populate form with existing data for editing
+        setPelangganId(editingPenjualan.pelangganId);
+        setNamaPelanggan(editingPenjualan.namaPelanggan);
+        setNamaToko(editingPenjualan.namaToko);
+        setAlamatPelanggan(editingPenjualan.alamatPelanggan);
+        setInvoiceNumber(editingPenjualan.nomorInvoice);
+        setItems(editingPenjualan.items);
+        setStatus(editingPenjualan.status);
+        setMetodePembayaran(editingPenjualan.metodePembayaran);
+        setNomorRekening(editingPenjualan.nomorRekening || "");
+        setNamaBank(editingPenjualan.namaBank || "");
+        setNamaPemilikRekening(editingPenjualan.namaPemilikRekening || "");
+        setDiskon(editingPenjualan.diskon);
+        setPajakEnabled(editingPenjualan.pajakEnabled);
+        setTanggalJatuhTempo(editingPenjualan.tanggalJatuhTempo || "");
+        setError(null);
+      } else {
+        resetForm();
+      }
     }
 
     const qProduk = query(
@@ -124,7 +150,7 @@ export default function PenjualanForm({
       unsubscribeProduk();
       unsubscribePelanggan();
     };
-  }, [open]);
+  }, [open, editingPenjualan]);
 
   const addItem = () => {
     setItems([
@@ -199,6 +225,11 @@ export default function PenjualanForm({
       return;
     }
 
+    if (status === "Belum Lunas" && !tanggalJatuhTempo) {
+      setError("Tanggal jatuh tempo harus diisi jika status belum lunas");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const penjualanData: any = {
@@ -207,7 +238,9 @@ export default function PenjualanForm({
         namaPelanggan,
         namaToko,
         alamatPelanggan,
-        tanggal: new Date().toISOString(),
+        tanggal: editingPenjualan
+          ? editingPenjualan.tanggal
+          : new Date().toISOString(),
         items,
         total: subtotal,
         diskon,
@@ -216,7 +249,6 @@ export default function PenjualanForm({
         status,
         metodePembayaran,
         pajakEnabled,
-        createdAt: new Date(),
       };
 
       // Only include bank details if payment method is Transfer
@@ -226,9 +258,20 @@ export default function PenjualanForm({
         penjualanData.namaPemilikRekening = namaPemilikRekening;
       }
 
-      await createPenjualan(penjualanData);
+      // Include tanggalJatuhTempo if status is Belum Lunas
+      if (status === "Belum Lunas") {
+        penjualanData.tanggalJatuhTempo = tanggalJatuhTempo;
+      }
 
-      alert("Penjualan berhasil disimpan!");
+      if (editingPenjualan && editingPenjualan.id) {
+        await updatePenjualan(editingPenjualan.id, penjualanData);
+        alert("Penjualan berhasil diperbarui!");
+      } else {
+        penjualanData.createdAt = new Date();
+        await createPenjualan(penjualanData);
+        alert("Penjualan berhasil disimpan!");
+      }
+
       onSuccess();
     } catch (error: any) {
       console.error(error);
@@ -328,6 +371,21 @@ export default function PenjualanForm({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Tanggal Jatuh Tempo - hanya muncul jika Belum Lunas */}
+            {status === "Belum Lunas" && (
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-foreground">
+                  Tanggal Jatuh Tempo
+                </Label>
+                <Input
+                  type="date"
+                  value={tanggalJatuhTempo}
+                  onChange={(e) => setTanggalJatuhTempo(e.target.value)}
+                  placeholder="Pilih tanggal jatuh tempo"
+                />
+              </div>
+            )}
 
             {/* Metode Pembayaran */}
             <div className="space-y-2">

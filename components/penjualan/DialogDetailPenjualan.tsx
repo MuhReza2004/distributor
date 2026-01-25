@@ -139,6 +139,20 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
           </div>
 
           <div>
+            <p>Tanggal Jatuh Tempo</p>
+            <p className="font-semibold">
+              {new Date(penjualan.tanggalJatuhTempo).toLocaleDateString(
+                "id-ID",
+                {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                },
+              )}
+            </p>
+          </div>
+
+          <div>
             <h3 className="font-semibold mb-2">Item yang Dibeli:</h3>
             <div className="border rounded-lg">
               <Table>
