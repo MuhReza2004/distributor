@@ -11,6 +11,7 @@ export interface Pembelian {
   npb?: string;
   nomorDO?: string;
   nomorKontrak?: string;
+  nomorFaktur?: string;
   supplierId: string;
   supplierNama: string;
   tanggal: string;

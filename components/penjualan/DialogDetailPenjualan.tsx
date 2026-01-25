@@ -70,8 +70,8 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
               <Badge
                 className={
                   penjualan.status === "Lunas"
-                    ? "bg-green-500 text-white"
-                    : "bg-red-500 text-white"
+                    ? "bg-green-600 text-white hover:bg-green-700"
+                    : "bg-red-600 text-white hover:bg-red-700"
                 }
               >
                 {penjualan.status}

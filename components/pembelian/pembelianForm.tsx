@@ -35,6 +35,11 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
   const [npb, setNpb] = useState("");
   const [nomorDO, setNomorDO] = useState("");
   const [nomorKontrak, setNomorKontrak] = useState("");
+  const [nomorFaktur, setNomorFaktur] = useState("");
+  const [tanggal, setTanggal] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0]; // YYYY-MM-DD format
+  });
   const [produkList, setProdukList] = useState<Produk[]>([]);
   const [supplierList, setSupplierList] = useState<Supplier[]>([]);
   const [items, setItems] = useState<PembelianItem[]>([]);
@@ -121,8 +126,9 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
         nomorDO,
         nomorKontrak,
         supplierId,
+        nomorFaktur,
         supplierNama,
-        tanggal: new Date().toISOString(),
+        tanggal,
         items,
         total,
         status: "selesai",
@@ -134,6 +140,11 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
       setNpb("");
       setNomorDO("");
       setNomorKontrak("");
+      setNomorFaktur("");
+      setTanggal(() => {
+        const today = new Date();
+        return today.toISOString().split("T")[0];
+      });
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error(error);
@@ -198,7 +209,12 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
+          <Input
+            type="date"
+            value={tanggal}
+            onChange={(e) => setTanggal(e.target.value)}
+          />
           <Input
             placeholder="Nomor Kontrak"
             value={nomorKontrak}
@@ -213,6 +229,11 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
             placeholder="Nomor Delivery Order (DO)"
             value={nomorDO}
             onChange={(e) => setNomorDO(e.target.value)}
+          />
+          <Input
+            placeholder="Invoice / Faktur"
+            value={nomorFaktur}
+            onChange={(e) => setNomorFaktur(e.target.value)}
           />
         </div>
 

@@ -62,7 +62,7 @@ export default function PenjualanTabel({
             <TableHead>Invoice</TableHead>
             <TableHead>Tanggal</TableHead>
             <TableHead>Pelanggan</TableHead>
-            <TableHead>Items</TableHead>
+            <TableHead>Nama Produk</TableHead>
             <TableHead className="text-right">Total</TableHead>
             <TableHead className="text-center">Status</TableHead>
             <TableHead className="text-center">Aksi</TableHead>
@@ -79,7 +79,7 @@ export default function PenjualanTabel({
                 {new Date(penjualan.tanggal).toLocaleDateString("id-ID")}
               </TableCell>
               <TableCell>{penjualan.namaPelanggan}</TableCell>
-              <TableCell>{penjualan.items.length}</TableCell>
+              <TableCell>{penjualan.items[0].namaProduk}</TableCell>
               <TableCell className="text-right">
                 {formatRupiah(penjualan.total)}
               </TableCell>
