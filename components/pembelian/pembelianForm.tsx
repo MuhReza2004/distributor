@@ -164,125 +164,119 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Transaksi Pembelian</CardTitle>
-        </CardHeader>
+      <div className="space-y-4">
+        <div className="flex gap-4 items-center">
+          <div className="flex-1 max-w-sm">
+            <Select
+              onValueChange={(val) => {
+                const s = supplierList.find((x) => x.id === val);
+                if (s) {
+                  setSupplierId(s.id);
+                  setSupplierNama(s.name);
+                }
+              }}
+              value={supplierId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih Supplier" />
+              </SelectTrigger>
+              <SelectContent>
+                {supplierList.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            onClick={() => setIsTambahProdukOpen(true)}
+            disabled={!supplierId}
+            variant="secondary"
+          >
+            + Tambah Produk Baru
+          </Button>
+        </div>
 
-        <CardContent className="space-y-4">
-          <div className="flex gap-4 items-center">
-            <div className="flex-1 max-w-sm">
+        <div className="grid grid-cols-3 gap-4">
+          <Input
+            placeholder="Nomor Kontrak"
+            value={nomorKontrak}
+            onChange={(e) => setNomorKontrak(e.target.value)}
+          />
+          <Input
+            placeholder="Nomor Peneriaman Barang (NPB)"
+            value={npb}
+            onChange={(e) => setNpb(e.target.value)}
+          />
+          <Input
+            placeholder="Nomor Delivery Order (DO)"
+            value={nomorDO}
+            onChange={(e) => setNomorDO(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          {items.map((item, i) => (
+            <div key={i} className="grid grid-cols-5 gap-2 items-center">
               <Select
-                onValueChange={(val) => {
-                  const s = supplierList.find((x) => x.id === val);
-                  if (s) {
-                    setSupplierId(s.id);
-                    setSupplierNama(s.name);
-                  }
-                }}
-                value={supplierId}
+                onValueChange={(val) => updateItem(i, "produkId", val)}
+                value={item.produkId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih Supplier" />
+                  <SelectValue placeholder="Pilih Produk" />
                 </SelectTrigger>
                 <SelectContent>
-                  {supplierList.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
+                  {produkList.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nameProduk} {p.stok ? ` (Stok: ${p.stok})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <Button
-              onClick={() => setIsTambahProdukOpen(true)}
-              disabled={!supplierId}
-              variant="secondary"
-            >
-              + Tambah Produk Baru
-            </Button>
-          </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <Input
-              placeholder="Nomor Kontrak"
-              value={nomorKontrak}
-              onChange={(e) => setNomorKontrak(e.target.value)}
-            />
-            <Input
-              placeholder="Nomor Peneriaman Barang (NPB)"
-              value={npb}
-              onChange={(e) => setNpb(e.target.value)}
-            />
-            <Input
-              placeholder="Nomor Delivery Order (DO)"
-              value={nomorDO}
-              onChange={(e) => setNomorDO(e.target.value)}
-            />
-          </div>
+              <Input
+                type="text"
+                min={1}
+                value={item.qty}
+                onChange={(e) => updateItem(i, "qty", Number(e.target.value))}
+                placeholder="Qty"
+              />
+              <Input
+                type="text"
+                value={"Rp " + item.hargaBeli.toLocaleString("id-ID")}
+                onChange={(e) =>
+                  updateItem(i, "hargaBeli", Number(e.target.value))
+                }
+                placeholder="Harga Beli"
+              />
 
-          <div className="space-y-2">
-            {items.map((item, i) => (
-              <div key={i} className="grid grid-cols-5 gap-2 items-center">
-                <Select
-                  onValueChange={(val) => updateItem(i, "produkId", val)}
-                  value={item.produkId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih Produk" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {produkList.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.nameProduk} {p.stok ? ` (Stok: ${p.stok})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Input
-                  type="text"
-                  min={1}
-                  value={item.qty}
-                  onChange={(e) => updateItem(i, "qty", Number(e.target.value))}
-                  placeholder="Qty"
-                />
-                <Input
-                  type="text"
-                  value={"Rp " + item.hargaBeli.toLocaleString("id-ID")}
-                  onChange={(e) =>
-                    updateItem(i, "hargaBeli", Number(e.target.value))
-                  }
-                  placeholder="Harga Beli"
-                />
-
-                <div className="font-medium">
-                  Rp {item.subtotal.toLocaleString("id-ID")}
-                </div>
-
-                <Button
-                  variant="destructive"
-                  onClick={() => setItems(items.filter((_, idx) => idx !== i))}
-                >
-                  Hapus
-                </Button>
+              <div className="font-medium">
+                Rp {item.subtotal.toLocaleString("id-ID")}
               </div>
-            ))}
-          </div>
 
-          <Button onClick={addItem} variant="outline">
-            + Tambah Item Pembelian
-          </Button>
+              <Button
+                variant="destructive"
+                onClick={() => setItems(items.filter((_, idx) => idx !== i))}
+              >
+                Hapus
+              </Button>
+            </div>
+          ))}
+        </div>
 
-          <div className="text-right font-bold text-lg">
-            Total: Rp {total.toLocaleString("id-ID")}
-          </div>
+        <Button onClick={addItem} variant="outline">
+          + Tambah Item Pembelian
+        </Button>
 
-          <Button onClick={submit} className="w-full" disabled={isLoading}>
-            {isLoading ? "Menyimpan..." : "Simpan Pembelian"}
-          </Button>
-        </CardContent>
-      </Card>
+        <div className="text-right font-bold text-lg">
+          Total: Rp {total.toLocaleString("id-ID")}
+        </div>
+
+        <Button onClick={submit} className="w-full" disabled={isLoading}>
+          {isLoading ? "Menyimpan..." : "Simpan Pembelian"}
+        </Button>
+      </div>
 
       <DialogTambahProduk
         open={isTambahProdukOpen}

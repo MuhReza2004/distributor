@@ -16,20 +16,58 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>NPB</TableHead>
-          <TableHead>DO</TableHead>
           <TableHead>Supplier</TableHead>
           <TableHead>Tanggal</TableHead>
+          <TableHead>NPB</TableHead>
+          <TableHead>DO</TableHead>
+          <TableHead>Nama Produk</TableHead>
+          <TableHead>Qty</TableHead>
+          <TableHead>Harga</TableHead>
           <TableHead>Total</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {data.map((p) => (
           <TableRow key={p.id}>
-            <TableCell>{p.npb}</TableCell>
-            <TableCell>{p.nomorDO}</TableCell>
             <TableCell>{p.supplierNama}</TableCell>
             <TableCell>{new Date(p.tanggal).toLocaleDateString()}</TableCell>
+            <TableCell>{p.npb || "-"}</TableCell>
+            <TableCell>{p.nomorDO || "-"}</TableCell>
+            <TableCell>
+              {p.items.length > 1 ? (
+                <ul className="list-disc list-inside">
+                  {p.items.map((item, index) => (
+                    <li key={index}>{item.namaProduk}</li>
+                  ))}
+                </ul>
+              ) : (
+                p.items[0]?.namaProduk
+              )}
+            </TableCell>
+            <TableCell>
+              {p.items.length > 1 ? (
+                <ul className="list-disc list-inside">
+                  {p.items.map((item, index) => (
+                    <li key={index}>{item.qty}</li>
+                  ))}
+                </ul>
+              ) : (
+                p.items[0]?.qty
+              )}
+            </TableCell>
+            <TableCell>
+              {p.items.length > 1 ? (
+                <ul className="list-disc list-inside">
+                  {p.items.map((item, index) => (
+                    <li key={index}>
+                      {"Rp " + item.hargaBeli.toLocaleString()}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                "Rp " + p.items[0]?.hargaBeli.toLocaleString()
+              )}
+            </TableCell>
             <TableCell>{formatRupiah(p.total)}</TableCell>{" "}
             {/* Diubah: Gunakan formatRupiah */}
           </TableRow>
