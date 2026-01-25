@@ -10,7 +10,11 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
-import { Supplier, SupplierFormData, SupplierProduct } from "@/app/types/suplyer";
+import {
+  Supplier,
+  SupplierFormData,
+  SupplierProduct,
+} from "@/app/types/suplyer";
 
 /* ======================
    CREATE
@@ -47,7 +51,7 @@ export const getSupplierById = async (id: string): Promise<Supplier | null> => {
     id: snap.id,
     ...(snap.data() as SupplierFormData),
     createdAt: snap.data().createdAt?.toDate(),
-    updatedAt: doc.data().updatedAt?.toDate(),
+    updatedAt: snap.data().updatedAt?.toDate(),
   };
 };
 

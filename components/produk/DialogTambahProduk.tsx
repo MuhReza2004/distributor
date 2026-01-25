@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   Dialog,
@@ -14,7 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProdukFormData } from "@/app/types/produk";
+import { Supplier, SupplierProduct } from "@/app/types/suplyer";
 import { getNewKodeProduk } from "@/app/services/produk.service";
+import {
+  getAllSuppliers,
+  getSupplierById,
+} from "@/app/services/supplyer.service";
 import { formatRupiah } from "@/helper/format";
 
 interface DialogTambahProdukProps {
@@ -38,6 +43,12 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+  const [supplierProducts, setSupplierProducts] = useState<SupplierProduct[]>(
+    [],
+  );
+
   const {
     register,
     handleSubmit,
@@ -61,6 +72,38 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
 
   useEffect(() => {
     if (open) {
+      const fetchSuppliers = async () => {
+        try {
+          const allSuppliers = await getAllSuppliers();
+          setSuppliers(allSuppliers);
+        } catch (error) {
+          console.error("Error fetching suppliers:", error);
+        }
+      };
+      fetchSuppliers();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (selectedSupplierId) {
+      const fetchSupplierProducts = async () => {
+        try {
+          const supplier = await getSupplierById(selectedSupplierId);
+          if (supplier) {
+            setSupplierProducts(supplier.products);
+          }
+        } catch (error) {
+          console.error("Error fetching supplier products:", error);
+        }
+      };
+      fetchSupplierProducts();
+    } else {
+      setSupplierProducts([]);
+    }
+  }, [selectedSupplierId]);
+
+  useEffect(() => {
+    if (open) {
       const generateKode = async () => {
         try {
           const newKode = await getNewKodeProduk();
@@ -77,6 +120,8 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
   const onSubmitForm = async (data: ProdukFormData) => {
     await onSubmit(data);
     reset();
+    setSelectedSupplierId("");
+    setSupplierProducts([]);
   };
 
   return (
@@ -90,19 +135,45 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="supplier" className="font-semibold">
+              Supplier *
+            </Label>
+            <select
+              id="supplier"
+              value={selectedSupplierId}
+              onChange={(e) => setSelectedSupplierId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Pilih Supplier</option>
+              {suppliers.map((supplier) => (
+                <option key={supplier.id} value={supplier.id}>
+                  {supplier.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nameProduk" className="font-semibold">
                 Nama Produk *
               </Label>
-              <Input
+              <select
                 id="nameProduk"
-                placeholder="Masukkan nama produk"
                 {...register("nameProduk", {
-                  required: "Nama produk wajib diisi",
+                  required: "Nama produk wajib dipilih",
                 })}
-                className={errors.nameProduk ? "border-red-500" : ""}
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={!selectedSupplierId}
+              >
+                <option value="">Pilih Nama Produk</option>
+                {supplierProducts.map((product: SupplierProduct) => (
+                  <option key={product.productId} value={product.name}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
               {errors.nameProduk && (
                 <p className="text-sm text-red-500">
                   {errors.nameProduk.message}
