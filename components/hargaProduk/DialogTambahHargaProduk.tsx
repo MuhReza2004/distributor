@@ -1,0 +1,156 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { SupplierProdukFormData } from "@/app/types/suplyer";
+import { addSupplierProduk } from "@/app/services/supplierProduk.service";
+import { getAllSuppliers } from "@/app/services/supplyer.service";
+import { getAllProduk } from "@/app/services/produk.service";
+import { Supplier } from "@/app/types/suplyer";
+import { Produk } from "@/app/types/produk";
+import { formatRupiah } from "@/helper/format";
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
+}
+
+export default function DialogTambahHargaProduk({
+  open,
+  onOpenChange,
+  onSuccess,
+}: Props) {
+  const [loading, setLoading] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [products, setProducts] = useState<Produk[]>([]);
+  const [displayPrice, setDisplayPrice] = useState("");
+
+  const [formData, setFormData] = useState<SupplierProdukFormData>({
+    supplierId: "",
+    produkId: "",
+    hargaBeli: 0,
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [sups, prods] = await Promise.all([
+        getAllSuppliers(),
+        getAllProduk(),
+      ]);
+      setSuppliers(sups);
+      setProducts(prods);
+    };
+    if (open) fetchData();
+  }, [open]);
+
+  const handlePriceChange = (value: string) => {
+    // Remove non-numeric characters except comma and dot
+    const numericValue = value.replace(/[^\d]/g, "");
+    const numberValue = parseInt(numericValue) || 0;
+
+    setFormData((p) => ({ ...p, hargaBeli: numberValue }));
+    setDisplayPrice(formatRupiah(numberValue));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    await addSupplierProduk(formData);
+
+    setLoading(false);
+    onSuccess?.();
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Tambah Harga Produk Supplier</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label>Supplier</Label>
+            <Select
+              value={formData.supplierId}
+              onValueChange={(val) =>
+                setFormData((p) => ({ ...p, supplierId: val }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih Supplier" />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.nama}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Produk</Label>
+            <Select
+              value={formData.produkId}
+              onValueChange={(val) =>
+                setFormData((p) => ({ ...p, produkId: val }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih Produk" />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nama}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Harga Beli</Label>
+            <Input
+              value={displayPrice}
+              onChange={(e) => handlePriceChange(e.target.value)}
+              placeholder="Rp 0"
+              required
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Batal
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Menyimpan..." : "Simpan"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -11,13 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
-import { nanoid } from "nanoid";
-import {
-  Supplier,
-  SupplierFormData,
-  SupplierProduct,
-} from "@/app/types/suplyer";
+import { SupplierFormData } from "@/app/types/suplyer";
 import { addSupplier } from "@/app/services/supplyer.service";
 
 interface Props {
@@ -32,44 +28,14 @@ export default function DialogTambahSupplier({
   onSuccess,
 }: Props) {
   const [loading, setLoading] = useState(false);
-  const [productName, setProductName] = useState("");
-  const [suppiers, setSuppliers] = useState<Supplier[]>([]);
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
-    null,
-  );
 
   const [formData, setFormData] = useState<SupplierFormData>({
-    name: "",
-    address: "",
-    products: [],
-    isActive: true,
+    kode: "",
+    nama: "",
+    alamat: "",
+    telp: "",
+    status: true,
   });
-
-  /* =====================
-     ADD PRODUCT
-     ===================== */
-  const addProduct = () => {
-    if (!productName.trim()) return;
-
-    const newProduct: SupplierProduct = {
-      productId: nanoid(),
-      name: productName,
-    };
-
-    setFormData((p) => ({
-      ...p,
-      products: [...p.products, newProduct],
-    }));
-
-    setProductName("");
-  };
-
-  const removeProduct = (id: string) => {
-    setFormData((p) => ({
-      ...p,
-      products: p.products.filter((item) => item.productId !== id),
-    }));
-  };
 
   /* =====================
      SUBMIT
@@ -78,7 +44,11 @@ export default function DialogTambahSupplier({
     e.preventDefault();
     setLoading(true);
 
-    await addSupplier(formData);
+    // Generate kode automatically
+    const kode = `SUP-${Date.now()}`;
+    const dataWithKode = { ...formData, kode };
+
+    await addSupplier(dataWithKode);
 
     setLoading(false);
     onSuccess?.();
@@ -96,9 +66,9 @@ export default function DialogTambahSupplier({
           <div>
             <Label>Nama Supplier</Label>
             <Input
-              value={formData.name}
+              value={formData.nama}
               onChange={(e) =>
-                setFormData((p) => ({ ...p, name: e.target.value }))
+                setFormData((p) => ({ ...p, nama: e.target.value }))
               }
               required
             />
@@ -107,46 +77,33 @@ export default function DialogTambahSupplier({
           <div>
             <Label>Alamat</Label>
             <Input
-              value={formData.address}
+              value={formData.alamat}
               onChange={(e) =>
-                setFormData((p) => ({ ...p, address: e.target.value }))
+                setFormData((p) => ({ ...p, alamat: e.target.value }))
               }
               required
             />
           </div>
 
-          {/* PRODUCT LIST */}
-          <div className="space-y-2">
-            <Label>Produk Supplier</Label>
+          <div>
+            <Label>Telepon</Label>
+            <Input
+              value={formData.telp}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, telp: e.target.value }))
+              }
+              required
+            />
+          </div>
 
-            <div className="flex gap-2">
-              <Input
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                placeholder="Nama produk"
-              />
-              <Button type="button" onClick={addProduct}>
-                + Tambah
-              </Button>
-            </div>
-
-            <ul className="space-y-1">
-              {formData.products.map((p) => (
-                <li
-                  key={p.productId}
-                  className="flex justify-between bg-gray-100 px-3 py-2 rounded"
-                >
-                  <span>{p.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeProduct(p.productId)}
-                    className="text-red-500 text-sm"
-                  >
-                    Hapus
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <div className="flex items-center justify-between">
+            <Label>Status Aktif</Label>
+            <Switch
+              checked={formData.status}
+              onCheckedChange={(checked) =>
+                setFormData((p) => ({ ...p, status: checked }))
+              }
+            />
           </div>
 
           <DialogFooter>

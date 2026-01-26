@@ -12,10 +12,40 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Package, Calendar, FileText, Truck, TrendingUp } from "lucide-react";
-import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Package,
+  Calendar,
+  FileText,
+  Truck,
+  TrendingUp,
+  Eye,
+} from "lucide-react";
+import { useMemo, useEffect, useState } from "react";
+import { getAllSuppliers } from "@/app/services/supplyer.service";
+import { getAllProduk } from "@/app/services/produk.service";
+import { Supplier } from "@/app/types/suplyer";
+import { Produk } from "@/app/types/produk";
+import DialogDetailPembelian from "./DialogDetailPembelian";
 
 export default function PembelianTable({ data }: { data: Pembelian[] }) {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [products, setProducts] = useState<Produk[]>([]);
+  const [selectedPembelian, setSelectedPembelian] = useState<Pembelian | null>(
+    null,
+  );
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const sups = await getAllSuppliers();
+      const prods = await getAllProduk();
+      setSuppliers(sups);
+      setProducts(prods);
+    };
+    fetchData();
+  }, []);
+
   // Hitung total per bulan
   const totalPerBulan = useMemo(() => {
     const grouped = data.reduce(
@@ -107,13 +137,16 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
               <TableHead className="font-semibold text-gray-700 text-right">
                 Total
               </TableHead>
+              <TableHead className="font-semibold text-gray-700 text-center">
+                Aksi
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={9}
                   className="text-center py-12 text-gray-500"
                 >
                   <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -129,7 +162,8 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                   }`}
                 >
                   <TableCell className="font-medium text-gray-900">
-                    {p.supplierNama}
+                    {suppliers.find((s) => s.id === p.supplierId)?.nama ||
+                      "Unknown Supplier"}
                   </TableCell>
                   <TableCell className="text-gray-600">
                     {new Date(p.tanggal).toLocaleDateString("id-ID", {
@@ -139,27 +173,27 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                     })}
                   </TableCell>
                   <TableCell>
-                    {p.nomorDO ? (
+                    {p.noDO ? (
                       <Badge variant="outline" className="font-mono text-xs">
-                        {p.nomorDO}
+                        {p.noDO}
                       </Badge>
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    {p.npb ? (
+                    {p.noNPB ? (
                       <Badge variant="outline" className="font-mono text-xs">
-                        {p.npb}
+                        {p.noNPB}
                       </Badge>
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    {p.nomorFaktur ? (
+                    {p.invoice ? (
                       <Badge variant="outline" className="font-mono text-xs">
-                        {p.nomorFaktur}
+                        {p.invoice}
                       </Badge>
                     ) : (
                       <span className="text-gray-400">-</span>
@@ -175,14 +209,16 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                           >
                             <span className="text-blue-600 mt-0.5">•</span>
                             <span className="text-gray-700">
-                              {item.namaProduk}
+                              {products.find((pr) => pr.id === item.produkId)
+                                ?.nama || "Unknown Product"}
                             </span>
                           </div>
                         ))}
                       </div>
                     ) : (
                       <span className="text-gray-700">
-                        {p.items[0]?.namaProduk}
+                        {products.find((pr) => pr.id === p.items[0]?.produkId)
+                          ?.nama || "Unknown Product"}
                       </span>
                     )}
                   </TableCell>
@@ -212,13 +248,13 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                             key={index}
                             className="text-sm text-gray-600 font-mono"
                           >
-                            {formatRupiah(item.hargaBeli)}
+                            {formatRupiah(item.harga)}
                           </div>
                         ))}
                       </div>
                     ) : (
                       <span className="text-gray-600 font-mono">
-                        {formatRupiah(p.items[0]?.hargaBeli)}
+                        {formatRupiah(p.items[0]?.harga)}
                       </span>
                     )}
                   </TableCell>
@@ -226,6 +262,18 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                     <span className="font-bold text-blue-600 text-base">
                       {formatRupiah(p.total)}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedPembelian(p);
+                        setDetailOpen(true);
+                      }}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -235,7 +283,7 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
             <TableFooter>
               <TableRow className=" bg-green-600">
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="text-white font-bold text-base"
                 >
                   <div className="flex items-center gap-2">
@@ -290,6 +338,12 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
           </div>
         </div>
       )}
+
+      <DialogDetailPembelian
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        pembelian={selectedPembelian}
+      />
     </div>
   );
 }

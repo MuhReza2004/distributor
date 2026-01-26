@@ -9,13 +9,15 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
-import { Supplier, SupplierFormData } from "@/app/types/suplyer";
+import { SupplierProduk, SupplierProdukFormData } from "@/app/types/suplyer";
 
 /* ======================
    CREATE
 ====================== */
-export const addSupplier = async (data: SupplierFormData): Promise<string> => {
-  const ref = await addDoc(collection(db, "suppliers"), {
+export const addSupplierProduk = async (
+  data: SupplierProdukFormData,
+): Promise<string> => {
+  const ref = await addDoc(collection(db, "supplier_produk"), {
     ...data,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -27,24 +29,26 @@ export const addSupplier = async (data: SupplierFormData): Promise<string> => {
 /* ======================
    READ
 ====================== */
-export const getAllSuppliers = async (): Promise<Supplier[]> => {
-  const snap = await getDocs(collection(db, "suppliers"));
+export const getAllSupplierProduk = async (): Promise<SupplierProduk[]> => {
+  const snap = await getDocs(collection(db, "supplier_produk"));
 
   return snap.docs.map((doc) => ({
     id: doc.id,
-    ...(doc.data() as SupplierFormData),
+    ...(doc.data() as SupplierProdukFormData),
     createdAt: doc.data().createdAt?.toDate(),
     updatedAt: doc.data().updatedAt?.toDate(),
   }));
 };
 
-export const getSupplierById = async (id: string): Promise<Supplier | null> => {
-  const snap = await getDoc(doc(db, "suppliers", id));
+export const getSupplierProdukById = async (
+  id: string,
+): Promise<SupplierProduk | null> => {
+  const snap = await getDoc(doc(db, "supplier_produk", id));
   if (!snap.exists()) return null;
 
   return {
     id: snap.id,
-    ...(snap.data() as SupplierFormData),
+    ...(snap.data() as SupplierProdukFormData),
     createdAt: snap.data().createdAt?.toDate(),
     updatedAt: snap.data().updatedAt?.toDate(),
   };
@@ -53,11 +57,11 @@ export const getSupplierById = async (id: string): Promise<Supplier | null> => {
 /* ======================
    UPDATE
 ====================== */
-export const updateSupplier = async (
+export const updateSupplierProduk = async (
   id: string,
-  data: Partial<SupplierFormData>,
+  data: Partial<SupplierProdukFormData>,
 ): Promise<void> => {
-  await updateDoc(doc(db, "suppliers", id), {
+  await updateDoc(doc(db, "supplier_produk", id), {
     ...data,
     updatedAt: serverTimestamp(),
   });
@@ -66,6 +70,6 @@ export const updateSupplier = async (
 /* ======================
    DELETE
 ====================== */
-export const deleteSupplier = async (id: string): Promise<void> => {
-  await deleteDoc(doc(db, "suppliers", id));
+export const deleteSupplierProduk = async (id: string): Promise<void> => {
+  await deleteDoc(doc(db, "supplier_produk", id));
 };

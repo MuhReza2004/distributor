@@ -74,16 +74,19 @@ export default function ProdukAdminPage() {
   };
 
   // Cek apakah produk dengan nama yang sama sudah ada
-  const checkDuplicateProduct = (nameProduk: string) => {
+  const checkDuplicateProduct = (nama: string) => {
+    if (!nama) return undefined;
     return products.find(
       (p) =>
-        p.nameProduk.toLowerCase().trim() === nameProduk.toLowerCase().trim(),
+        p.nama &&
+        typeof p.nama === "string" &&
+        p.nama.toLowerCase().trim() === nama.toLowerCase().trim(),
     );
   };
 
   // Handle tambah produk dengan validasi duplikasi
   const handleTambahSubmit = async (data: ProdukFormData) => {
-    const duplicate = checkDuplicateProduct(data.nameProduk);
+    const duplicate = checkDuplicateProduct(data.nama);
     if (duplicate) {
       setExistingDuplicateProduct(duplicate);
       setPendingNewData(data);

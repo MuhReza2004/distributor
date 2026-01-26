@@ -1,22 +1,21 @@
-export interface PembelianItem {
+export interface PembelianDetail {
+  id?: string;
+  pembelianId?: string;
   produkId: string;
-  namaProduk: string;
-  hargaBeli: number;
   qty: number;
+  harga: number;
   subtotal: number;
 }
 
 export interface Pembelian {
   id?: string;
-  npb?: string;
-  nomorDO?: string;
-  nomorKontrak?: string;
-  nomorFaktur?: string;
   supplierId: string;
-  supplierNama: string;
   tanggal: string;
-  items: PembelianItem[];
+  noDO?: string;
+  noNPB?: string;
+  invoice?: string;
   total: number;
-  status: string;
-  createdAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+  items?: PembelianDetail[]; // populated from pembelian_detail
 }

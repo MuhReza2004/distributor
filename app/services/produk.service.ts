@@ -66,30 +66,8 @@ export const getNewKodeProduk = async (): Promise<string> => {
    CREATE
    ============================= */
 export const addProduk = async (data: ProdukFormData): Promise<string> => {
-  const generateProdukId = async (): Promise<string> => {
-    const counterRef = doc(db, "counters", "produk");
-
-    const next = await runTransaction(db, async (tx) => {
-      const snap = await tx.get(counterRef);
-
-      if (!snap.exists()) {
-        tx.set(counterRef, { lastNumber: 1 });
-        return 1;
-      }
-
-      const nextNumber = snap.data().lastNumber + 1;
-      tx.update(counterRef, { lastNumber: nextNumber });
-      return nextNumber;
-    });
-
-    return `PRD-${String(next).padStart(5, "0")}`;
-  };
-
-  const idProduk = await generateProdukId();
-
   const ref = await addDoc(collection(db, "produk"), {
     ...data,
-    idProduk,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });

@@ -1,13 +1,9 @@
-export interface SupplierProduct {
-  productId: string; // optional refer ke master product
-  name: string;
-}
-
 export interface SupplierFormData {
-  name: string;
-  address: string;
-  products: SupplierProduct[];
-  isActive: boolean;
+  kode: string;
+  nama: string;
+  alamat: string;
+  telp: string;
+  status: boolean;
 }
 
 export interface Supplier extends SupplierFormData {
@@ -16,12 +12,17 @@ export interface Supplier extends SupplierFormData {
   updatedAt?: Date;
 }
 
-export interface SupplierDetail extends Supplier {
-  products: SupplierProduct[];
+export interface SupplierProduk {
+  id: string;
+  supplierId: string;
+  produkId: string;
+  hargaBeli: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export interface SupplierProductDetail extends SupplierProduct {
-  buyPrice: number;
-  sellPrice: number;
-  stock: number;
+export interface SupplierProdukFormData {
+  supplierId: string;
+  produkId: string;
+  hargaBeli: number;
 }

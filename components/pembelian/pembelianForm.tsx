@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { createPembelian } from "@/app/services/pembelian.service";
-import { PembelianItem } from "@/app/types/pembelian";
+import { PembelianDetail } from "@/app/types/pembelian";
 import { addProduk } from "@/app/services/produk.service";
-import {
-  addProductToSupplier,
-  getAllSuppliers,
-} from "@/app/services/supplyer.service";
+import {} from "@/app/services/supplyer.service";
 import { Produk, ProdukFormData } from "@/app/types/produk";
 import { Supplier } from "@/app/types/suplyer";
 
@@ -31,26 +28,21 @@ interface PembelianFormProps {
 
 export default function PembelianForm({ onSuccess }: PembelianFormProps) {
   const [supplierId, setSupplierId] = useState("");
-  const [supplierNama, setSupplierNama] = useState("");
-  const [npb, setNpb] = useState("");
-  const [nomorDO, setNomorDO] = useState("");
-  const [nomorKontrak, setNomorKontrak] = useState("");
-  const [nomorFaktur, setNomorFaktur] = useState("");
   const [tanggal, setTanggal] = useState(() => {
     const today = new Date();
     return today.toISOString().split("T")[0]; // YYYY-MM-DD format
   });
+  const [noDO, setNoDO] = useState("");
+  const [noNPB, setNoNPB] = useState("");
+  const [invoice, setInvoice] = useState("");
   const [produkList, setProdukList] = useState<Produk[]>([]);
   const [supplierList, setSupplierList] = useState<Supplier[]>([]);
-  const [items, setItems] = useState<PembelianItem[]>([]);
+  const [items, setItems] = useState<PembelianDetail[]>([]);
   const [isTambahProdukOpen, setIsTambahProdukOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const qProduk = query(
-      collection(db, "produk"),
-      orderBy("nameProduk", "asc"),
-    );
+    const qProduk = query(collection(db, "produk"), orderBy("nama", "asc"));
     const unsubscribeProduk = onSnapshot(qProduk, (snapshot) => {
       const prods = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -61,7 +53,7 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
 
     const qSupplier = query(
       collection(db, "suppliers"),
-      orderBy("name", "asc"),
+      orderBy("nama", "asc"),
     );
     const unsubscribeSupplier = onSnapshot(qSupplier, (snapshot) => {
       const sups = snapshot.docs.map((doc) => ({
@@ -82,9 +74,8 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
       ...items,
       {
         produkId: "",
-        namaProduk: "",
-        hargaBeli: 0,
         qty: 1,
+        harga: 0,
         subtotal: 0,
       },
     ]);
@@ -98,12 +89,11 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
     if (field === "produkId") {
       const p = produkList.find((x) => x.id === value);
       if (p) {
-        item.namaProduk = p.nameProduk;
-        item.hargaBeli = p.hargaBeli;
+        item.harga = p.hargaJual; // assuming harga is hargaJual
       }
     }
 
-    item.subtotal = item.hargaBeli * item.qty;
+    item.subtotal = item.harga * item.qty;
     setItems(newItems);
   };
 
@@ -122,25 +112,20 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
     setIsLoading(true);
     try {
       await createPembelian({
-        npb,
-        nomorDO,
-        nomorKontrak,
         supplierId,
-        nomorFaktur,
-        supplierNama,
         tanggal,
-        items,
+        noDO,
+        noNPB,
+        invoice,
         total,
-        status: "selesai",
-        createdAt: new Date(),
+        items,
       });
 
       alert("Pembelian berhasil!");
       setItems([]);
-      setNpb("");
-      setNomorDO("");
-      setNomorKontrak("");
-      setNomorFaktur("");
+      setNoDO("");
+      setNoNPB("");
+      setInvoice("");
       setTanggal(() => {
         const today = new Date();
         return today.toISOString().split("T")[0];
@@ -154,14 +139,25 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
     }
   };
 
+  const checkDuplicateProduct = (nama: string) => {
+    if (!nama) return false;
+    return produkList.some(
+      (p) =>
+        p.nama &&
+        typeof p.nama === "string" &&
+        p.nama.toLowerCase() === nama.toLowerCase(),
+    );
+  };
+
   const handleTambahProdukSubmit = async (data: ProdukFormData) => {
+    if (checkDuplicateProduct(data.nama)) {
+      alert("Produk dengan nama ini sudah ada!");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const newProdukId = await addProduk(data);
-      await addProductToSupplier(supplierId, {
-        productId: newProdukId,
-        name: data.nameProduk,
-      });
+      await addProduk(data);
 
       alert("Produk baru berhasil ditambahkan!");
       setIsTambahProdukOpen(false);
@@ -180,11 +176,7 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
           <div className="flex-1 max-w-sm">
             <Select
               onValueChange={(val) => {
-                const s = supplierList.find((x) => x.id === val);
-                if (s) {
-                  setSupplierId(s.id);
-                  setSupplierNama(s.name);
-                }
+                setSupplierId(val);
               }}
               value={supplierId}
             >
@@ -194,7 +186,7 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
               <SelectContent>
                 {supplierList.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
-                    {s.name}
+                    {s.nama}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -216,24 +208,19 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
             onChange={(e) => setTanggal(e.target.value)}
           />
           <Input
-            placeholder="Nomor Kontrak"
-            value={nomorKontrak}
-            onChange={(e) => setNomorKontrak(e.target.value)}
-          />
-          <Input
             placeholder="Nomor Peneriaman Barang (NPB)"
-            value={npb}
-            onChange={(e) => setNpb(e.target.value)}
+            value={noNPB}
+            onChange={(e) => setNoNPB(e.target.value)}
           />
           <Input
             placeholder="Nomor Delivery Order (DO)"
-            value={nomorDO}
-            onChange={(e) => setNomorDO(e.target.value)}
+            value={noDO}
+            onChange={(e) => setNoDO(e.target.value)}
           />
           <Input
             placeholder="Invoice / Faktur"
-            value={nomorFaktur}
-            onChange={(e) => setNomorFaktur(e.target.value)}
+            value={invoice}
+            onChange={(e) => setInvoice(e.target.value)}
           />
         </div>
 
@@ -250,7 +237,7 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
                 <SelectContent>
                   {produkList.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.nameProduk} {p.stok ? ` (Stok: ${p.stok})` : ""}
+                      {p.nama} {p.stok ? ` (Stok: ${p.stok})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -265,10 +252,8 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
               />
               <Input
                 type="text"
-                value={"Rp " + item.hargaBeli.toLocaleString("id-ID")}
-                onChange={(e) =>
-                  updateItem(i, "hargaBeli", Number(e.target.value))
-                }
+                value={"Rp " + item.harga.toLocaleString("id-ID")}
+                onChange={(e) => updateItem(i, "harga", Number(e.target.value))}
                 placeholder="Harga Beli"
               />
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -14,13 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProdukFormData } from "@/app/types/produk";
-import { Supplier, SupplierProduct } from "@/app/types/suplyer";
 import { getNewKodeProduk } from "@/app/services/produk.service";
-import {
-  getAllSuppliers,
-  getSupplierById,
-} from "@/app/services/supplyer.service";
-import { formatRupiah } from "@/helper/format";
 
 interface DialogTambahProdukProps {
   open: boolean;
@@ -43,85 +37,51 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
-  const [supplierProducts, setSupplierProducts] = useState<SupplierProduct[]>(
-    [],
-  );
+  const [hargaJualFormatted, setHargaJualFormatted] = useState("");
 
   const {
     register,
     handleSubmit,
     reset,
     setValue,
-    control,
     formState: { errors },
   } = useForm<ProdukFormData>({
     defaultValues: {
-      nameProduk: "",
-      kodeProduk: "",
-      kategori: "lainnya",
-      satuan: "pcs",
-      hargaBeli: 0,
+      kode: "",
+      nama: "",
+      satuan: "Pcs",
+      kategori: "",
       hargaJual: 0,
       stok: 0,
-      minimumStok: 10,
+      minStok: 0,
       status: "aktif",
     },
   });
 
   useEffect(() => {
     if (open) {
-      const fetchSuppliers = async () => {
-        try {
-          const allSuppliers = await getAllSuppliers();
-          setSuppliers(allSuppliers);
-        } catch (error) {
-          console.error("Error fetching suppliers:", error);
-        }
-      };
-      fetchSuppliers();
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (selectedSupplierId) {
-      const fetchSupplierProducts = async () => {
-        try {
-          const supplier = await getSupplierById(selectedSupplierId);
-          if (supplier) {
-            setSupplierProducts(supplier.products);
-          }
-        } catch (error) {
-          console.error("Error fetching supplier products:", error);
-        }
-      };
-      fetchSupplierProducts();
-    } else {
-      setSupplierProducts([]);
-    }
-  }, [selectedSupplierId]);
-
-  useEffect(() => {
-    if (open) {
-      const generateKode = async () => {
-        try {
-          const newKode = await getNewKodeProduk();
-          setValue("kodeProduk", newKode);
-        } catch (error) {
-          console.error("Error generating kode produk:", error);
-        }
-      };
-      generateKode();
       reset(); // Reset form on open
+      setHargaJualFormatted("");
     }
-  }, [open, setValue, reset]);
+  }, [open, reset]);
+
+  const formatRupiah = (value: string) => {
+    const number = value.replace(/[^0-9]/g, "");
+    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  const handleHargaJualChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/[^0-9]/g, "");
+    const numericValue = parseInt(rawValue) || 0;
+    setValue("hargaJual", numericValue);
+    setHargaJualFormatted(formatRupiah(rawValue));
+  };
 
   const onSubmitForm = async (data: ProdukFormData) => {
-    await onSubmit(data);
+    const kode = await getNewKodeProduk();
+    const dataWithKode = { ...data, kode };
+    await onSubmit(dataWithKode);
     reset();
-    setSelectedSupplierId("");
-    setSupplierProducts([]);
   };
 
   return (
@@ -136,85 +96,24 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
 
         <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="supplier" className="font-semibold">
-              Supplier *
+            <Label htmlFor="nama" className="font-semibold">
+              Nama Produk *
             </Label>
-            <select
-              id="supplier"
-              value={selectedSupplierId}
-              onChange={(e) => setSelectedSupplierId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Pilih Supplier</option>
-              {suppliers.map((supplier) => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.name}
-                </option>
-              ))}
-            </select>
+            <Input
+              id="nama"
+              placeholder="Masukkan nama produk"
+              {...register("nama", {
+                required: "Nama produk wajib diisi",
+                minLength: { value: 3, message: "Minimal 3 karakter" },
+              })}
+              className={errors.nama ? "border-red-500" : ""}
+            />
+            {errors.nama && (
+              <p className="text-sm text-red-500">{errors.nama.message}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nameProduk" className="font-semibold">
-                Nama Produk *
-              </Label>
-              <select
-                id="nameProduk"
-                {...register("nameProduk", {
-                  required: "Nama produk wajib dipilih",
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={!selectedSupplierId}
-              >
-                <option value="">Pilih Nama Produk</option>
-                {supplierProducts.map((product: SupplierProduct) => (
-                  <option key={product.productId} value={product.name}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-              {errors.nameProduk && (
-                <p className="text-sm text-red-500">
-                  {errors.nameProduk.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="kodeProduk" className="font-semibold">
-                Kode Produk
-              </Label>
-              <Input
-                id="kodeProduk"
-                placeholder="Auto-generated"
-                {...register("kodeProduk")}
-                readOnly
-                className="bg-gray-100 cursor-not-allowed"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nameProduk" className="font-semibold">
-                Kategory *
-              </Label>
-              <Input
-                id="kategory"
-                placeholder="Masukkan Kategory"
-                {...register("kategori", {
-                  required: "Kategori wajib diisi",
-                })}
-                className={errors.kategori ? "border-red-500" : ""}
-              />
-              {errors.kategori && (
-                <p className="text-sm text-red-500">
-                  {errors.kategori.message}
-                </p>
-              )}
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="satuan" className="font-semibold">
                 Satuan *
@@ -234,65 +133,39 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
                 <p className="text-sm text-red-500">{errors.satuan.message}</p>
               )}
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="kategori" className="font-semibold">
+                Kategori *
+              </Label>
+              <Input
+                id="kategori"
+                placeholder="Masukkan kategori"
+                {...register("kategori", {
+                  required: "Kategori wajib diisi",
+                })}
+                className={errors.kategori ? "border-red-500" : ""}
+              />
+              {errors.kategori && (
+                <p className="text-sm text-red-500">
+                  {errors.kategori.message}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="hargaBeli" className="font-semibold">
-                Harga Beli *
-              </Label>
-              <Controller
-                control={control}
-                name="hargaBeli"
-                rules={{
-                  required: "Harga beli wajib diisi",
-                  min: { value: 1, message: "Harga tidak boleh nol" },
-                }}
-                render={({ field }) => (
-                  <Input
-                    id="hargaBeli"
-                    inputMode="numeric"
-                    placeholder="Rp 0"
-                    value={field.value ? formatRupiah(field.value) : ""}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/\D/g, "");
-                      field.onChange(Number(raw));
-                    }}
-                    className={errors.hargaBeli ? "border-red-500" : ""}
-                  />
-                )}
-              />
-              {errors.hargaBeli && (
-                <p className="text-sm text-red-500">
-                  {errors.hargaBeli.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="hargaJual" className="font-semibold">
                 Harga Jual *
               </Label>
-              <Controller
-                control={control}
-                name="hargaJual"
-                rules={{
-                  required: "Harga jual wajib diisi",
-                  min: { value: 1, message: "Harga tidak boleh nol" },
-                }}
-                render={({ field }) => (
-                  <Input
-                    id="hargaJual"
-                    inputMode="numeric"
-                    placeholder="Rp 0"
-                    value={field.value ? formatRupiah(field.value) : ""}
-                    onChange={(e) => {
-                      const raw = e.target.value.replace(/\D/g, "");
-                      field.onChange(Number(raw));
-                    }}
-                    className={errors.hargaJual ? "border-red-500" : ""}
-                  />
-                )}
+              <Input
+                id="hargaJual"
+                type="text"
+                placeholder="Masukkan harga jual"
+                value={hargaJualFormatted}
+                onChange={handleHargaJualChange}
+                className={errors.hargaJual ? "border-red-500" : ""}
               />
               {errors.hargaJual && (
                 <p className="text-sm text-red-500">
@@ -300,65 +173,60 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
                 </p>
               )}
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="stok" className="font-semibold">
-                Stok Awal *
+                Stok *
               </Label>
               <Input
                 id="stok"
                 type="number"
-                placeholder="0"
+                placeholder="Masukkan stok"
                 {...register("stok", {
-                  required: "Stok awal wajib diisi",
-                  valueAsNumber: true,
-                  min: { value: 0, message: "Stok tidak boleh minus" },
+                  required: "Stok wajib diisi",
+                  min: { value: 0, message: "Stok minimal 0" },
                 })}
                 className={errors.stok ? "border-red-500" : ""}
               />
-              <p className="text-sm text-gray-500">
-                Ket: Stok awal diisi jika produk sudah tersedia
-              </p>
               {errors.stok && (
                 <p className="text-sm text-red-500">{errors.stok.message}</p>
               )}
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="minimumStok" className="font-semibold">
+              <Label htmlFor="minStok" className="font-semibold">
                 Minimum Stok *
               </Label>
               <Input
-                id="minimumStok"
+                id="minStok"
                 type="number"
-                placeholder="0"
-                {...register("minimumStok", {
+                placeholder="Masukkan minimum stok"
+                {...register("minStok", {
                   required: "Minimum stok wajib diisi",
-                  valueAsNumber: true,
+                  min: { value: 0, message: "Minimum stok minimal 0" },
                 })}
-                className={errors.minimumStok ? "border-red-500" : ""}
+                className={errors.minStok ? "border-red-500" : ""}
               />
-              {errors.minimumStok && (
-                <p className="text-sm text-red-500">
-                  {errors.minimumStok.message}
-                </p>
+              {errors.minStok && (
+                <p className="text-sm text-red-500">{errors.minStok.message}</p>
               )}
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status" className="font-semibold">
-              Status *
-            </Label>
-            <select
-              id="status"
-              {...register("status")}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="aktif">Aktif</option>
-              <option value="nonaktif">Nonaktif</option>
-            </select>
+            <div className="space-y-2">
+              <Label htmlFor="status" className="font-semibold">
+                Status *
+              </Label>
+              <select
+                id="status"
+                {...register("status")}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="aktif">Aktif</option>
+                <option value="nonaktif">Nonaktif</option>
+              </select>
+            </div>
           </div>
 
           <DialogFooter>

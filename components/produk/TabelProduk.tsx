@@ -37,9 +37,8 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
     const search = searchTerm.toLowerCase();
     return products.filter(
       (p) =>
-        p.nameProduk.toLowerCase().includes(search) ||
-        p.kodeProduk.toLowerCase().includes(search) ||
-        p.idProduk.toLowerCase().includes(search),
+        p.nama.toLowerCase().includes(search) ||
+        p.satuan.toLowerCase().includes(search),
     );
   }, [products, searchTerm]);
 
@@ -71,25 +70,21 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
             <TableHead className="font-semibold text-gray-700 w-12">
               No
             </TableHead>
-
             <TableHead className="font-semibold text-gray-700">Kode</TableHead>
             <TableHead className="font-semibold text-gray-700">
               Nama Produk
             </TableHead>
+            <TableHead className="font-semibold text-gray-700">
+              Kategori
+            </TableHead>
             <TableHead className="font-semibold text-gray-700 text-center">
               Satuan
             </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">
-              Harga Beli
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">
+            <TableHead className="font-semibold text-gray-700 text-center">
               Harga Jual
             </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">
+            <TableHead className="font-semibold text-gray-700 text-center">
               Stok
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-right">
-              Min Stok
             </TableHead>
             <TableHead className="font-semibold text-gray-700 text-center">
               Status
@@ -101,7 +96,6 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
         </TableHeader>
         <TableBody>
           {filteredProducts.map((product, index) => {
-            const isLowStock = product.stok <= product.minimumStok;
             const statusColor =
               product.status === "aktif"
                 ? "text-green-600 bg-green-50"
@@ -109,41 +103,29 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
 
             return (
               <TableRow
-                key={product.idProduk}
-                className={`border-b hover:bg-gray-50 transition-colors ${
-                  isLowStock ? "bg-yellow-50" : ""
-                }`}
+                key={product.id}
+                className="border-b hover:bg-gray-50 transition-colors"
               >
                 <TableCell className="text-gray-700 font-medium">
                   {index + 1}
                 </TableCell>
-                <TableCell className="text-gray-700 font-semibold text-sm">
-                  {product.kodeProduk}
+                <TableCell className="text-gray-700 font-medium">
+                  {product.kode}
                 </TableCell>
                 <TableCell className="text-gray-700 font-medium">
-                  {product.nameProduk}
+                  {product.nama}
+                </TableCell>
+                <TableCell className="text-gray-700">
+                  {product.kategori}
                 </TableCell>
                 <TableCell className="text-center text-gray-600 text-sm">
                   {product.satuan}
                 </TableCell>
-                <TableCell className="text-right text-gray-700 font-semibold">
-                  Rp {product.hargaBeli.toLocaleString("id-ID")}
+                <TableCell className="text-center text-gray-600">
+                  Rp {(product.hargaJual || 0).toLocaleString("id-ID")}
                 </TableCell>
-                <TableCell className="text-right text-gray-700 font-semibold">
-                  Rp {product.hargaJual.toLocaleString("id-ID")}
-                </TableCell>
-                <TableCell
-                  className={`text-right font-semibold ${
-                    isLowStock ? "text-red-600" : "text-gray-700"
-                  }`}
-                >
+                <TableCell className="text-center text-gray-600">
                   {product.stok}
-                  {isLowStock && (
-                    <div className="text-xs text-red-600">⚠️ Kurang</div>
-                  )}
-                </TableCell>
-                <TableCell className="text-right text-gray-600 text-sm">
-                  {product.minimumStok}
                 </TableCell>
                 <TableCell className="text-center">
                   <span
@@ -167,10 +149,10 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
                       size="sm"
                       variant="destructive"
                       onClick={() => {
-                        setDeletingId(product.idProduk);
+                        setDeletingId(product.id);
                         onDelete(product);
                       }}
-                      disabled={deletingId === product.idProduk}
+                      disabled={deletingId === product.id}
                       className="h-8 px-2"
                       title="Hapus"
                     >
