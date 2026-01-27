@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { DialogTambahProduk } from "@/components/produk/DialogTambahProduk";
 import { DialogEditProduk } from "@/components/produk/DialogEditProduk";
 import { DialogHapusProduk } from "@/components/produk/DialogHapusProduk";
-import { DialogProdukDuplikat } from "@/components/produk/DialogProdukDuplikat";
+
 import { TabelProdukNew } from "@/components/produk/TabelProduk";
 import {
   addProduk,
@@ -28,16 +28,8 @@ export default function ProdukAdminPage() {
   const [dialogTambahOpen, setDialogTambahOpen] = useState(false);
   const [dialogEditOpen, setDialogEditOpen] = useState(false);
   const [dialogHapusOpen, setDialogHapusOpen] = useState(false);
-  const [dialogDuplikatOpen, setDialogDuplikatOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Produk | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Duplikasi produk states
-  const [pendingNewData, setPendingNewData] = useState<ProdukFormData | null>(
-    null,
-  );
-  const [existingDuplicateProduct, setExistingDuplicateProduct] =
-    useState<Produk | null>(null);
 
   // Filter & Search
   const [searchTerm, setSearchTerm] = useState("");
@@ -88,10 +80,7 @@ export default function ProdukAdminPage() {
   const handleTambahSubmit = async (data: ProdukFormData) => {
     const duplicate = checkDuplicateProduct(data.nama);
     if (duplicate) {
-      setExistingDuplicateProduct(duplicate);
-      setPendingNewData(data);
-      setDialogDuplikatOpen(true);
-      setDialogTambahOpen(false);
+      setError("Produk dengan nama yang sama sudah terdaftar");
       return;
     }
 
@@ -103,54 +92,6 @@ export default function ProdukAdminPage() {
     } catch (err) {
       setError("Gagal menambah produk");
       console.error("Error adding product:", err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handle tambah stok (duplikasi produk)
-  const handleAddStok = async () => {
-    if (!existingDuplicateProduct || !pendingNewData) return;
-
-    try {
-      setIsSubmitting(true);
-      const updatedData: Partial<ProdukFormData> = {
-        stok: existingDuplicateProduct.stok + pendingNewData.stok,
-      };
-
-      await updateProduk(existingDuplicateProduct.id, updatedData);
-
-      showSuccess(
-        `Stok berhasil ditambahkan. Total stok sekarang: ${
-          existingDuplicateProduct.stok + pendingNewData.stok
-        } ${existingDuplicateProduct.satuan}`,
-      );
-
-      setDialogDuplikatOpen(false);
-      setExistingDuplicateProduct(null);
-      setPendingNewData(null);
-    } catch (err) {
-      setError("Gagal menambah stok");
-      console.error("Error adding stock:", err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handle tambah produk baru (meskipun ada duplikasi)
-  const handleAddNewAnyway = async () => {
-    if (!pendingNewData) return;
-
-    try {
-      setIsSubmitting(true);
-      await addProduk(pendingNewData);
-      showSuccess("Produk baru berhasil ditambahkan (duplikasi nama produk)");
-      setDialogDuplikatOpen(false);
-      setExistingDuplicateProduct(null);
-      setPendingNewData(null);
-    } catch (err) {
-      setError("Gagal menambah produk baru");
-      console.error("Error adding new product:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -287,17 +228,6 @@ export default function ProdukAdminPage() {
         onOpenChange={setDialogHapusOpen}
         onConfirm={handleDeleteConfirm}
         produk={selectedProduct}
-        isLoading={isSubmitting}
-      />
-
-      {/* Dialog Produk Duplikat */}
-      <DialogProdukDuplikat
-        open={dialogDuplikatOpen}
-        onOpenChange={setDialogDuplikatOpen}
-        existingProduct={existingDuplicateProduct}
-        newData={pendingNewData}
-        onAddStok={handleAddStok}
-        onAddNew={handleAddNewAnyway}
         isLoading={isSubmitting}
       />
     </div>

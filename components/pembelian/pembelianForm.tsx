@@ -6,7 +6,7 @@ import { PembelianDetail } from "@/app/types/pembelian";
 import { addProduk } from "@/app/services/produk.service";
 import {} from "@/app/services/supplyer.service";
 import { Produk, ProdukFormData } from "@/app/types/produk";
-import { Supplier } from "@/app/types/suplyer";
+import { Supplier, SupplierProduk } from "@/app/types/suplyer";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +18,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { DialogTambahProduk } from "../produk/DialogTambahProduk";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
+import { Trash2, Plus, Package, Save } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 interface PembelianFormProps {
   onSuccess?: () => void;
@@ -35,21 +38,30 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
   const [noDO, setNoDO] = useState("");
   const [noNPB, setNoNPB] = useState("");
   const [invoice, setInvoice] = useState("");
-  const [produkList, setProdukList] = useState<Produk[]>([]);
+  const [supplierProdukList, setSupplierProdukList] = useState<
+    SupplierProduk[]
+  >([]);
   const [supplierList, setSupplierList] = useState<Supplier[]>([]);
+  const [produkList, setProdukList] = useState<Produk[]>([]);
   const [items, setItems] = useState<PembelianDetail[]>([]);
   const [isTambahProdukOpen, setIsTambahProdukOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const qProduk = query(collection(db, "produk"), orderBy("nama", "asc"));
-    const unsubscribeProduk = onSnapshot(qProduk, (snapshot) => {
-      const prods = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Produk[];
-      setProdukList(prods);
-    });
+    const qSupplierProduk = query(
+      collection(db, "supplier_produk"),
+      orderBy("createdAt", "desc"),
+    );
+    const unsubscribeSupplierProduk = onSnapshot(
+      qSupplierProduk,
+      (snapshot) => {
+        const supProds = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as SupplierProduk[];
+        setSupplierProdukList(supProds);
+      },
+    );
 
     const qSupplier = query(
       collection(db, "suppliers"),
@@ -63,9 +75,19 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
       setSupplierList(sups);
     });
 
+    const qProduk = query(collection(db, "produk"), orderBy("nama", "asc"));
+    const unsubscribeProduk = onSnapshot(qProduk, (snapshot) => {
+      const prods = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Produk[];
+      setProdukList(prods);
+    });
+
     return () => {
-      unsubscribeProduk();
+      unsubscribeSupplierProduk();
       unsubscribeSupplier();
+      unsubscribeProduk();
     };
   }, []);
 
@@ -73,7 +95,7 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
     setItems([
       ...items,
       {
-        produkId: "",
+        supplierProdukId: "",
         qty: 1,
         harga: 0,
         subtotal: 0,
@@ -86,10 +108,10 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
     const item = newItems[i] as any;
     item[field] = value;
 
-    if (field === "produkId") {
-      const p = produkList.find((x) => x.id === value);
-      if (p) {
-        item.harga = p.hargaJual; // assuming harga is hargaJual
+    if (field === "supplierProdukId") {
+      const sp = supplierProdukList.find((x) => x.id === value);
+      if (sp) {
+        item.harga = sp.hargaBeli; // use hargaBeli from supplier product
       }
     }
 
@@ -104,7 +126,7 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
       alert("Pilih supplier terlebih dahulu");
       return;
     }
-    if (items.some((item) => !item.produkId || !item.qty)) {
+    if (items.some((item) => !item.supplierProdukId || !item.qty)) {
       alert("Pastikan semua produk dan kuantitas terisi");
       return;
     }
@@ -118,6 +140,7 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
         noNPB,
         invoice,
         total,
+        status: "pending", // default status
         items,
       });
 
@@ -171,117 +194,275 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
 
   return (
     <>
-      <div className="space-y-4">
-        <div className="flex gap-4 items-center">
-          <div className="flex-1 max-w-sm">
-            <Select
-              onValueChange={(val) => {
-                setSupplierId(val);
-              }}
-              value={supplierId}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih Supplier" />
-              </SelectTrigger>
-              <SelectContent>
-                {supplierList.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.nama}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <div className="space-y-6">
+        {/* Informasi Supplier & Dokumen */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-base font-semibold mb-3">
+              Informasi Supplier & Dokumen
+            </h3>
+            <Separator />
           </div>
-          {/* <Button
-            onClick={() => setIsTambahProdukOpen(true)}
-            disabled={!supplierId}
-            variant="secondary"
-          >
-            + Tambah Produk Baru
-          </Button> */}
-        </div>
 
-        <div className="grid grid-cols-4 gap-4">
-          <Input
-            type="date"
-            value={tanggal}
-            onChange={(e) => setTanggal(e.target.value)}
-          />
-          <Input
-            placeholder="Nomor Peneriaman Barang (NPB)"
-            value={noNPB}
-            onChange={(e) => setNoNPB(e.target.value)}
-          />
-          <Input
-            placeholder="Nomor Delivery Order (DO)"
-            value={noDO}
-            onChange={(e) => setNoDO(e.target.value)}
-          />
-          <Input
-            placeholder="Invoice / Faktur"
-            value={invoice}
-            onChange={(e) => setInvoice(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          {items.map((item, i) => (
-            <div key={i} className="grid grid-cols-5 gap-2 items-center">
+          <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
+            <div className="space-y-2">
+              <Label htmlFor="supplier" className="text-sm font-medium">
+                Supplier <span className="text-destructive">*</span>
+              </Label>
               <Select
-                onValueChange={(val) => updateItem(i, "produkId", val)}
-                value={item.produkId}
+                onValueChange={(val) => setSupplierId(val)}
+                value={supplierId}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih Produk" />
+                <SelectTrigger id="supplier" suppressHydrationWarning>
+                  <SelectValue placeholder="Pilih Supplier" />
                 </SelectTrigger>
-                <SelectContent>
-                  {produkList.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.nama} {p.stok ? ` (Stok: ${p.stok})` : ""}
+                <SelectContent suppressHydrationWarning>
+                  {supplierList.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.nama}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
 
-              <Input
-                type="text"
-                min={1}
-                value={item.qty}
-                onChange={(e) => updateItem(i, "qty", Number(e.target.value))}
-                placeholder="Qty"
-              />
-              <Input
-                type="text"
-                value={"Rp " + item.harga.toLocaleString("id-ID")}
-                onChange={(e) => updateItem(i, "harga", Number(e.target.value))}
-                placeholder="Harga Beli"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="tanggal" className="text-sm font-medium">
+                  Tanggal <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="tanggal"
+                  type="date"
+                  value={tanggal}
+                  onChange={(e) => setTanggal(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="noNPB" className="text-sm font-medium">
+                  No. Penerimaan Barang (NPB)
+                </Label>
+                <Input
+                  id="noNPB"
+                  placeholder="NPB"
+                  value={noNPB}
+                  onChange={(e) => setNoNPB(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="noDO" className="text-sm font-medium">
+                  No. Delivery Order (DO)
+                </Label>
+                <Input
+                  id="noDO"
+                  placeholder="DO"
+                  value={noDO}
+                  onChange={(e) => setNoDO(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="invoice" className="text-sm font-medium">
+                  Invoice / Faktur
+                </Label>
+                <Input
+                  id="invoice"
+                  placeholder="Invoice"
+                  value={invoice}
+                  onChange={(e) => setInvoice(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-              <div className="font-medium">
-                Rp {item.subtotal.toLocaleString("id-ID")}
+        {/* Item Pembelian */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-semibold">Item Pembelian</h3>
+              <p className="text-sm text-muted-foreground">
+                Tambahkan produk yang dibeli
+              </p>
+            </div>
+            <Button
+              onClick={addItem}
+              variant="outline"
+              size="sm"
+              disabled={!supplierId}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Tambah Item
+            </Button>
+          </div>
+
+          <Separator />
+
+          {items.length === 0 ? (
+            <div className="text-center py-16 bg-muted/20 rounded-lg border-2 border-dashed">
+              <Package className="h-16 w-16 mx-auto mb-4 opacity-30" />
+              <p className="text-muted-foreground font-medium">
+                Belum ada item pembelian
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Pilih supplier dan klik "Tambah Item" untuk memulai
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Header - Desktop only */}
+              <div className="hidden lg:grid grid-cols-[2.5fr_0.8fr_1.2fr_1.2fr_60px] gap-3 px-4 py-2 bg-primary/5 rounded-md text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <div>Produk</div>
+                <div>Qty</div>
+                <div>Harga Satuan</div>
+                <div>Subtotal</div>
+                <div></div>
               </div>
 
-              <Button
-                variant="destructive"
-                onClick={() => setItems(items.filter((_, idx) => idx !== i))}
-              >
-                Hapus
-              </Button>
+              {/* Items */}
+              {items.map((item, i) => (
+                <div
+                  key={i}
+                  className="border-2 rounded-lg p-3 bg-card hover:border-primary/50 transition-colors"
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-[2.5fr_0.8fr_1.2fr_1.2fr_60px] gap-3 items-center">
+                    {/* Produk */}
+                    <div className="space-y-1.5">
+                      <Label className="lg:hidden text-xs font-medium text-muted-foreground">
+                        Produk
+                      </Label>
+                      <Select
+                        onValueChange={(val) =>
+                          updateItem(i, "supplierProdukId", val)
+                        }
+                        value={item.supplierProdukId}
+                      >
+                        <SelectTrigger
+                          className="h-auto min-h-[36px]"
+                          suppressHydrationWarning
+                        >
+                          <SelectValue
+                            placeholder="Pilih Produk"
+                            className="whitespace-normal break-words text-left"
+                          />
+                        </SelectTrigger>
+
+                        <SelectContent
+                          className="max-w-[350px]"
+                          suppressHydrationWarning
+                        >
+                          {supplierProdukList
+                            .filter((sp) => sp.supplierId === supplierId)
+                            .map((sp) => {
+                              const produk = produkList.find(
+                                (p) => p.id === sp.produkId,
+                              );
+                              return (
+                                <SelectItem
+                                  key={sp.id}
+                                  value={sp.id}
+                                  className="whitespace-normal break-words leading-snug"
+                                >
+                                  <div className="flex flex-col">
+                                    <span>{produk?.nama}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      Stok: {sp.stok}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Quantity */}
+                    <div className="space-y-1.5">
+                      <Label className="lg:hidden text-xs font-medium text-muted-foreground">
+                        Quantity
+                      </Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={item.qty}
+                        onChange={(e) =>
+                          updateItem(i, "qty", Number(e.target.value))
+                        }
+                        placeholder="Qty"
+                        className="h-9"
+                      />
+                    </div>
+
+                    {/* Harga */}
+                    <div className="space-y-1.5">
+                      <Label className="lg:hidden text-xs font-medium text-muted-foreground">
+                        Harga Satuan
+                      </Label>
+                      <Input
+                        type="text"
+                        value={"Rp " + item.harga.toLocaleString("id-ID")}
+                        readOnly
+                        className="bg-muted/50 h-9"
+                      />
+                    </div>
+
+                    {/* Subtotal */}
+                    <div className="space-y-1.5">
+                      <Label className="lg:hidden text-xs font-medium text-muted-foreground">
+                        Subtotal
+                      </Label>
+                      <div className="font-semibold text-sm flex items-center h-9 px-3 bg-muted/30 rounded-md">
+                        Rp {item.subtotal.toLocaleString("id-ID")}
+                      </div>
+                    </div>
+
+                    {/* Delete Button */}
+                    <div className="flex justify-end lg:justify-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() =>
+                          setItems(items.filter((_, idx) => idx !== i))
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
 
-        <Button onClick={addItem} variant="outline">
-          + Tambah Item Pembelian
-        </Button>
-
-        <div className="text-right font-bold text-lg">
-          Total: Rp {total.toLocaleString("id-ID")}
+        {/* Total & Submit */}
+        <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t-2 mt-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-primary/5 p-4 rounded-lg">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">
+                Total Pembelian
+              </p>
+              <div className="text-3xl font-bold text-primary">
+                Rp {total.toLocaleString("id-ID")}
+              </div>
+            </div>
+            <Button
+              onClick={submit}
+              size="lg"
+              disabled={isLoading || items.length === 0 || !supplierId}
+              className="w-full sm:w-auto min-w-[200px]"
+            >
+              {isLoading ? (
+                "Menyimpan..."
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Simpan Pembelian
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-
-        <Button onClick={submit} className="w-full" disabled={isLoading}>
-          {isLoading ? "Menyimpan..." : "Simpan Pembelian"}
-        </Button>
       </div>
 
       <DialogTambahProduk

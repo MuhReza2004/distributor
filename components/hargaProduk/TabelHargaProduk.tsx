@@ -50,6 +50,8 @@ export default function TabelHargaProduk({ data, onEdit, onDelete }: Props) {
             <th className="px-4 py-3">Supplier</th>
             <th className="px-4 py-3">Produk</th>
             <th className="px-4 py-3">Harga Beli</th>
+            <th className="px-4 py-3">Harga Jual</th>
+            <th className="px-4 py-3">Stok</th>
             <th className="px-4 py-3 text-center">Aksi</th>
           </tr>
         </thead>
@@ -61,6 +63,8 @@ export default function TabelHargaProduk({ data, onEdit, onDelete }: Props) {
               <td className="px-4 py-3">{getSupplierName(item.supplierId)}</td>
               <td className="px-4 py-3">{getProductName(item.produkId)}</td>
               <td className="px-4 py-3">{formatRupiah(item.hargaBeli)}</td>
+              <td className="px-4 py-3">{formatRupiah(item.hargaJual)}</td>
+              <td className="px-4 py-3">{item.stok}</td>
               <td className="px-4 py-3">
                 <div className="flex justify-center gap-2">
                   <Button size="sm" onClick={() => onEdit(item)}>

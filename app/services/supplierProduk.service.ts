@@ -7,6 +7,7 @@ import {
   getDocs,
   getDoc,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { SupplierProduk, SupplierProdukFormData } from "@/app/types/suplyer";
@@ -20,7 +21,6 @@ export const addSupplierProduk = async (
   const ref = await addDoc(collection(db, "supplier_produk"), {
     ...data,
     createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
   });
 
   return ref.id;
@@ -35,8 +35,7 @@ export const getAllSupplierProduk = async (): Promise<SupplierProduk[]> => {
   return snap.docs.map((doc) => ({
     id: doc.id,
     ...(doc.data() as SupplierProdukFormData),
-    createdAt: doc.data().createdAt?.toDate(),
-    updatedAt: doc.data().updatedAt?.toDate(),
+    createdAt: doc.data().createdAt as Timestamp,
   }));
 };
 
@@ -49,8 +48,7 @@ export const getSupplierProdukById = async (
   return {
     id: snap.id,
     ...(snap.data() as SupplierProdukFormData),
-    createdAt: snap.data().createdAt?.toDate(),
-    updatedAt: snap.data().updatedAt?.toDate(),
+    createdAt: snap.data().createdAt as Timestamp,
   };
 };
 

@@ -8,8 +8,9 @@ import {
   orderBy,
   query,
   runTransaction,
+  where,
 } from "firebase/firestore";
-import { Penjualan } from "@/app/types/penjualan";
+import { Penjualan, PenjualanDetail } from "@/app/types/penjualan";
 import { db } from "../lib/firebase";
 import { Produk } from "../types/produk";
 
@@ -17,27 +18,39 @@ export const createPenjualan = async (data: Penjualan) => {
   // Use a transaction to ensure stock validation and updates are atomic
   await runTransaction(db, async (transaction) => {
     // 1. Validate stock for all items
-    for (const item of data.items) {
+    for (const item of data.items || []) {
       const produkRef = doc(db, "produk", item.produkId);
       const produkDoc = await transaction.get(produkRef);
 
       if (!produkDoc.exists()) {
-        throw new Error(`Produk ${item.namaProduk} tidak ditemukan.`);
+        throw new Error(`Produk tidak ditemukan.`);
       }
 
       const currentStok = produkDoc.data().stok;
       if (currentStok < item.qty) {
         throw new Error(
-          `Stok produk ${item.namaProduk} tidak mencukupi. Sisa stok: ${currentStok}`,
+          `Stok produk tidak mencukupi. Sisa stok: ${currentStok}`,
         );
       }
     }
 
     // 2. If all validations pass, create the sale and update stock
     const penjualanRef = doc(collection(db, "penjualan")); // Create a new doc ref
-    transaction.set(penjualanRef, { ...data, createdAt: new Date() });
+    const penjualanData = { ...data };
+    delete penjualanData.items; // Remove items from main document
+    transaction.set(penjualanRef, { ...penjualanData, createdAt: new Date() });
 
-    for (const item of data.items) {
+    // Create penjualan_detail documents
+    for (const item of data.items || []) {
+      await addDoc(collection(db, "penjualan_detail"), {
+        penjualanId: penjualanRef.id,
+        produkId: item.produkId,
+        qty: item.qty,
+        harga: item.harga,
+        subtotal: item.subtotal,
+      });
+
+      // Update stock
       const produkRef = doc(db, "produk", item.produkId);
       transaction.update(produkRef, {
         stok: increment(-item.qty),
@@ -50,10 +63,31 @@ export const getAllPenjualan = async (): Promise<Penjualan[]> => {
   const q = query(collection(db, "penjualan"), orderBy("createdAt", "desc"));
   const snap = await getDocs(q);
 
-  return snap.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Penjualan[];
+  const penjualanList: Penjualan[] = [];
+
+  for (const docSnap of snap.docs) {
+    const penjualanData = docSnap.data() as Penjualan;
+    const penjualanId = docSnap.id;
+
+    // Fetch details
+    const detailQuery = query(
+      collection(db, "penjualan_detail"),
+      where("penjualanId", "==", penjualanId),
+    );
+    const detailSnap = await getDocs(detailQuery);
+    const details = detailSnap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    })) as PenjualanDetail[];
+
+    penjualanList.push({
+      id: penjualanId,
+      ...penjualanData,
+      items: details, // Add items for compatibility
+    });
+  }
+
+  return penjualanList;
 };
 
 export const updatePenjualanStatus = async (
@@ -86,7 +120,7 @@ export const updatePenjualan = async (id: string, data: Partial<Penjualan>) => {
         const produkDoc = await transaction.get(produkRef);
 
         if (!produkDoc.exists()) {
-          throw new Error(`Produk ${item.namaProduk} tidak ditemukan.`);
+          throw new Error(`Produk tidak ditemukan.`);
         }
 
         produkReads[item.produkId] = {
@@ -102,13 +136,13 @@ export const updatePenjualan = async (id: string, data: Partial<Penjualan>) => {
         const currentStok = produkInfo.data.stok;
         if (currentStok < item.qty) {
           throw new Error(
-            `Stok produk ${item.namaProduk} tidak mencukupi. Sisa stok: ${currentStok}`,
+            `Stok produk tidak mencukupi. Sisa stok: ${currentStok}`,
           );
         }
       }
 
       // Now do all writes: restore old stock, then deduct new stock
-      for (const item of currentData.items) {
+      for (const item of currentData.items || []) {
         const produkRef = doc(db, "produk", item.produkId);
         transaction.update(produkRef, {
           stok: increment(item.qty),
@@ -124,7 +158,9 @@ export const updatePenjualan = async (id: string, data: Partial<Penjualan>) => {
     }
 
     // Update the penjualan document
-    transaction.update(penjualanRef, { ...data, updatedAt: new Date() });
+    const updateData = { ...data };
+    delete updateData.items; // Remove items from main document update
+    transaction.update(penjualanRef, { ...updateData, updatedAt: new Date() });
   });
 };
 

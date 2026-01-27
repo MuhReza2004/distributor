@@ -24,13 +24,15 @@ import {
 import { useMemo, useEffect, useState } from "react";
 import { getAllSuppliers } from "@/app/services/supplyer.service";
 import { getAllProduk } from "@/app/services/produk.service";
-import { Supplier } from "@/app/types/suplyer";
+import { getAllSupplierProduk } from "@/app/services/supplierProduk.service";
+import { Supplier, SupplierProduk } from "@/app/types/suplyer";
 import { Produk } from "@/app/types/produk";
 import DialogDetailPembelian from "./DialogDetailPembelian";
 
 export default function PembelianTable({ data }: { data: Pembelian[] }) {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Produk[]>([]);
+  const [supplierProduks, setSupplierProduks] = useState<SupplierProduk[]>([]);
   const [selectedPembelian, setSelectedPembelian] = useState<Pembelian | null>(
     null,
   );
@@ -40,8 +42,10 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
     const fetchData = async () => {
       const sups = await getAllSuppliers();
       const prods = await getAllProduk();
+      const supProds = await getAllSupplierProduk();
       setSuppliers(sups);
       setProducts(prods);
+      setSupplierProduks(supProds);
     };
     fetchData();
   }, []);
@@ -200,30 +204,44 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                     )}
                   </TableCell>
                   <TableCell>
-                    {p.items.length > 1 ? (
+                    {p.items && p.items.length > 1 ? (
                       <div className="space-y-1">
-                        {p.items.map((item, index) => (
-                          <div
-                            key={index}
-                            className="flex items-start gap-2 text-sm"
-                          >
-                            <span className="text-blue-600 mt-0.5">•</span>
-                            <span className="text-gray-700">
-                              {products.find((pr) => pr.id === item.produkId)
-                                ?.nama || "Unknown Product"}
-                            </span>
-                          </div>
-                        ))}
+                        {p.items.map((item, index) => {
+                          const supplierProduk = supplierProduks.find(
+                            (sp) => sp.id === item.supplierProdukId,
+                          );
+                          const product = products.find(
+                            (pr) => pr.id === supplierProduk?.produkId,
+                          );
+                          return (
+                            <div
+                              key={index}
+                              className="flex items-start gap-2 text-sm"
+                            >
+                              <span className="text-blue-600 mt-0.5">•</span>
+                              <span className="text-gray-700">
+                                {product?.nama || "Unknown Product"}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
                       <span className="text-gray-700">
-                        {products.find((pr) => pr.id === p.items[0]?.produkId)
-                          ?.nama || "Unknown Product"}
+                        {(() => {
+                          const supplierProduk = supplierProduks.find(
+                            (sp) => sp.id === p.items?.[0]?.supplierProdukId,
+                          );
+                          const product = products.find(
+                            (pr) => pr.id === supplierProduk?.produkId,
+                          );
+                          return product?.nama || "Unknown Product";
+                        })()}
                       </span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {p.items.length > 1 ? (
+                    {p.items && p.items.length > 1 ? (
                       <div className="space-y-1">
                         {p.items.map((item, index) => (
                           <div
@@ -236,12 +254,12 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                       </div>
                     ) : (
                       <span className="font-medium text-gray-700">
-                        {p.items[0]?.qty}
+                        {p.items?.[0]?.qty}
                       </span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {p.items.length > 1 ? (
+                    {p.items && p.items.length > 1 ? (
                       <div className="space-y-1">
                         {p.items.map((item, index) => (
                           <div
@@ -254,7 +272,7 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                       </div>
                     ) : (
                       <span className="text-gray-600 font-mono">
-                        {formatRupiah(p.items[0]?.harga)}
+                        {formatRupiah(p.items?.[0]?.harga)}
                       </span>
                     )}
                   </TableCell>
@@ -292,7 +310,7 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                   </div>
                 </TableCell>
                 <TableCell className="text-right text-white font-bold text-lg">
-                  {formatRupiah(grandTotal)}
+                  {formatRupiah(grandTotal || 0)}
                 </TableCell>
               </TableRow>
             </TableFooter>

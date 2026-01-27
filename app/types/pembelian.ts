@@ -1,7 +1,7 @@
 export interface PembelianDetail {
   id?: string;
   pembelianId?: string;
-  produkId: string;
+  supplierProdukId: string;
   qty: number;
   harga: number;
   subtotal: number;
@@ -15,6 +15,7 @@ export interface Pembelian {
   noNPB?: string;
   invoice?: string;
   total: number;
+  status: string;
   createdAt?: Date;
   updatedAt?: Date;
   items?: PembelianDetail[]; // populated from pembelian_detail

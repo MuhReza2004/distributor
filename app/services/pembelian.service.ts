@@ -20,6 +20,7 @@ export const createPembelian = async (data: {
   noNPB?: string;
   invoice?: string;
   total: number;
+  status: string;
   items: PembelianDetail[];
 }) => {
   const pembelianRef = await addDoc(collection(db, "pembelian"), {
@@ -29,6 +30,7 @@ export const createPembelian = async (data: {
     noNPB: data.noNPB,
     invoice: data.invoice,
     total: data.total,
+    status: data.status,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -37,15 +39,15 @@ export const createPembelian = async (data: {
   for (const item of data.items) {
     await addDoc(collection(db, "pembelian_detail"), {
       pembelianId: pembelianRef.id,
-      produkId: item.produkId,
+      supplierProdukId: item.supplierProdukId,
       qty: item.qty,
       harga: item.harga,
       subtotal: item.subtotal,
     });
 
     // Update stock
-    const produkRef = doc(db, "produk", item.produkId);
-    await updateDoc(produkRef, {
+    const supplierProdukRef = doc(db, "supplier_produk", item.supplierProdukId);
+    await updateDoc(supplierProdukRef, {
       stok: increment(item.qty),
     });
   }
@@ -66,7 +68,7 @@ export const getAllPembelian = async (): Promise<Pembelian[]> => {
     // Fetch details
     const detailQuery = query(
       collection(db, "pembelian_detail"),
-      orderBy("produkId"),
+      orderBy("supplierProdukId"),
     );
     const detailSnap = await getDocs(detailQuery);
     const details = detailSnap.docs

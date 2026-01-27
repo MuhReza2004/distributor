@@ -1,22 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { getAllPembelian } from "@/app/services/pembelian.service";
 import { Pembelian } from "@/app/types/pembelian";
-import PembelianForm from "@/components/pembelian/pembelianForm";
 import PembelianTable from "@/components/pembelian/pembelianTabel";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Plus } from "lucide-react";
 
 export default function PagePembelian() {
   const [data, setData] = useState<Pembelian[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const router = useRouter();
 
   const loadData = async () => {
     const res = await getAllPembelian();
@@ -27,27 +22,26 @@ export default function PagePembelian() {
     loadData();
   }, []);
 
-  const handleFormSuccess = () => {
-    setIsDialogOpen(false);
-    loadData();
-  };
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Transaksi Pembelian</h1>
-        <Button onClick={() => setIsDialogOpen(true)}>Tambah Pembelian</Button>
+        <div>
+          <h1 className="text-3xl font-bold">Transaksi Pembelian</h1>
+          <p className="text-muted-foreground mt-1">
+            Kelola transaksi pembelian dari supplier
+          </p>
+        </div>
+        <Button
+          onClick={() =>
+            router.push("/dashboard/admin/transaksi/pembelian/tambah")
+          }
+          size="lg"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Tambah Pembelian
+        </Button>
       </div>
       <PembelianTable data={data} />
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Transaksi Pembelian</DialogTitle>
-          </DialogHeader>
-          <PembelianForm onSuccess={handleFormSuccess} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

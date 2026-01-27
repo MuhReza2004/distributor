@@ -80,12 +80,7 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
             <TableHead className="font-semibold text-gray-700 text-center">
               Satuan
             </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-center">
-              Harga Jual
-            </TableHead>
-            <TableHead className="font-semibold text-gray-700 text-center">
-              Stok
-            </TableHead>
+
             <TableHead className="font-semibold text-gray-700 text-center">
               Status
             </TableHead>
@@ -121,12 +116,7 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
                 <TableCell className="text-center text-gray-600 text-sm">
                   {product.satuan}
                 </TableCell>
-                <TableCell className="text-center text-gray-600">
-                  Rp {(product.hargaJual || 0).toLocaleString("id-ID")}
-                </TableCell>
-                <TableCell className="text-center text-gray-600">
-                  {product.stok}
-                </TableCell>
+
                 <TableCell className="text-center">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}

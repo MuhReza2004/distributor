@@ -14,7 +14,8 @@ import { getPembelianDetails } from "@/app/services/pembelian.service";
 import { PembelianDetail } from "@/app/types/pembelian";
 import { getAllSuppliers } from "@/app/services/supplyer.service";
 import { getAllProduk } from "@/app/services/produk.service";
-import { Supplier } from "@/app/types/suplyer";
+import { getAllSupplierProduk } from "@/app/services/supplierProduk.service";
+import { Supplier, SupplierProduk } from "@/app/types/suplyer";
 import { Produk } from "@/app/types/produk";
 
 interface Props {
@@ -31,6 +32,7 @@ export default function DialogDetailPembelian({
   const [details, setDetails] = useState<PembelianDetail[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Produk[]>([]);
+  const [supplierProduks, setSupplierProduks] = useState<SupplierProduk[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,9 +40,11 @@ export default function DialogDetailPembelian({
         const det = await getPembelianDetails(pembelian.id);
         const sups = await getAllSuppliers();
         const prods = await getAllProduk();
+        const supProds = await getAllSupplierProduk();
         setDetails(det);
         setSuppliers(sups);
         setProducts(prods);
+        setSupplierProduks(supProds);
       }
     };
     fetchData();
@@ -101,7 +105,12 @@ export default function DialogDetailPembelian({
             <h3 className="text-lg font-semibold mb-4">Detail Produk</h3>
             <div className="space-y-2">
               {details.map((detail, index) => {
-                const product = products.find((p) => p.id === detail.produkId);
+                const supplierProduk = supplierProduks.find(
+                  (sp) => sp.id === detail.supplierProdukId,
+                );
+                const product = products.find(
+                  (p) => p.id === supplierProduk?.produkId,
+                );
                 return (
                   <div
                     key={detail.id}

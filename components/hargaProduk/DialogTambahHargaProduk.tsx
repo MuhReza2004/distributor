@@ -42,11 +42,14 @@ export default function DialogTambahHargaProduk({
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Produk[]>([]);
   const [displayPrice, setDisplayPrice] = useState("");
+  const [displaySellPrice, setDisplaySellPrice] = useState("");
 
   const [formData, setFormData] = useState<SupplierProdukFormData>({
     supplierId: "",
     produkId: "",
     hargaBeli: 0,
+    hargaJual: 0,
+    stok: 0,
   });
 
   useEffect(() => {
@@ -70,6 +73,15 @@ export default function DialogTambahHargaProduk({
     setDisplayPrice(formatRupiah(numberValue));
   };
 
+  const handleSellPriceChange = (value: string) => {
+    // Remove non-numeric characters except comma and dot
+    const numericValue = value.replace(/[^\d]/g, "");
+    const numberValue = parseInt(numericValue) || 0;
+
+    setFormData((p) => ({ ...p, hargaJual: numberValue }));
+    setDisplaySellPrice(formatRupiah(numberValue));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -85,12 +97,12 @@ export default function DialogTambahHargaProduk({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Tambah Harga Produk Supplier</DialogTitle>
+          <DialogTitle>Tambah Supplier Produk</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>Supplier</Label>
+            <Label>Supplier *</Label>
             <Select
               value={formData.supplierId}
               onValueChange={(val) =>
@@ -111,7 +123,7 @@ export default function DialogTambahHargaProduk({
           </div>
 
           <div>
-            <Label>Produk</Label>
+            <Label>Produk *</Label>
             <Select
               value={formData.produkId}
               onValueChange={(val) =>
@@ -132,11 +144,37 @@ export default function DialogTambahHargaProduk({
           </div>
 
           <div>
-            <Label>Harga Beli</Label>
+            <Label>Harga Beli *</Label>
             <Input
               value={displayPrice}
               onChange={(e) => handlePriceChange(e.target.value)}
               placeholder="Rp 0"
+              required
+            />
+          </div>
+
+          <div>
+            <Label>Harga Jual *</Label>
+            <Input
+              value={displaySellPrice}
+              onChange={(e) => handleSellPriceChange(e.target.value)}
+              placeholder="Rp 0"
+              required
+            />
+          </div>
+
+          <div>
+            <Label>Stok Fisik *</Label>
+            <Input
+              type="text"
+              value={formData.stok}
+              onChange={(e) =>
+                setFormData((p) => ({
+                  ...p,
+                  stok: parseInt(e.target.value) || 0,
+                }))
+              }
+              placeholder="0"
               required
             />
           </div>

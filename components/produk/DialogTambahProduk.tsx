@@ -43,7 +43,7 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
     register,
     handleSubmit,
     reset,
-    setValue,
+
     formState: { errors },
   } = useForm<ProdukFormData>({
     defaultValues: {
@@ -51,9 +51,6 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
       nama: "",
       satuan: "Pcs",
       kategori: "",
-      hargaJual: 0,
-      stok: 0,
-      minStok: 0,
       status: "aktif",
     },
   });
@@ -61,21 +58,8 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
   useEffect(() => {
     if (open) {
       reset(); // Reset form on open
-      setHargaJualFormatted("");
     }
   }, [open, reset]);
-
-  const formatRupiah = (value: string) => {
-    const number = value.replace(/[^0-9]/g, "");
-    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  };
-
-  const handleHargaJualChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/[^0-9]/g, "");
-    const numericValue = parseInt(rawValue) || 0;
-    setValue("hargaJual", numericValue);
-    setHargaJualFormatted(formatRupiah(rawValue));
-  };
 
   const onSubmitForm = async (data: ProdukFormData) => {
     const kode = await getNewKodeProduk();
@@ -154,79 +138,18 @@ export const DialogTambahProduk: React.FC<DialogTambahProdukProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="hargaJual" className="font-semibold">
-                Harga Jual *
-              </Label>
-              <Input
-                id="hargaJual"
-                type="text"
-                placeholder="Masukkan harga jual"
-                value={hargaJualFormatted}
-                onChange={handleHargaJualChange}
-                className={errors.hargaJual ? "border-red-500" : ""}
-              />
-              {errors.hargaJual && (
-                <p className="text-sm text-red-500">
-                  {errors.hargaJual.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="stok" className="font-semibold">
-                Stok *
-              </Label>
-              <Input
-                id="stok"
-                type="number"
-                placeholder="Masukkan stok"
-                {...register("stok", {
-                  required: "Stok wajib diisi",
-                  min: { value: 0, message: "Stok minimal 0" },
-                })}
-                className={errors.stok ? "border-red-500" : ""}
-              />
-              {errors.stok && (
-                <p className="text-sm text-red-500">{errors.stok.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="minStok" className="font-semibold">
-                Minimum Stok *
-              </Label>
-              <Input
-                id="minStok"
-                type="number"
-                placeholder="Masukkan minimum stok"
-                {...register("minStok", {
-                  required: "Minimum stok wajib diisi",
-                  min: { value: 0, message: "Minimum stok minimal 0" },
-                })}
-                className={errors.minStok ? "border-red-500" : ""}
-              />
-              {errors.minStok && (
-                <p className="text-sm text-red-500">{errors.minStok.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status" className="font-semibold">
-                Status *
-              </Label>
-              <select
-                id="status"
-                {...register("status")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="aktif">Aktif</option>
-                <option value="nonaktif">Nonaktif</option>
-              </select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="status" className="font-semibold">
+              Status *
+            </Label>
+            <select
+              id="status"
+              {...register("status")}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="aktif">Aktif</option>
+              <option value="nonaktif">Nonaktif</option>
+            </select>
           </div>
 
           <DialogFooter>

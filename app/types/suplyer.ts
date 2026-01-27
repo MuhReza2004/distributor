@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export interface SupplierFormData {
   kode: string;
   nama: string;
@@ -17,12 +19,15 @@ export interface SupplierProduk {
   supplierId: string;
   produkId: string;
   hargaBeli: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+  hargaJual: number;
+  stok: number;
+  createdAt: Timestamp;
 }
 
 export interface SupplierProdukFormData {
   supplierId: string;
   produkId: string;
   hargaBeli: number;
+  hargaJual: number;
+  stok: number;
 }

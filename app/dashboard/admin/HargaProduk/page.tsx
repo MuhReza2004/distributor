@@ -29,7 +29,7 @@ export default function HargaProdukPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Yakin ingin menghapus harga produk ini?")) return;
+    if (!confirm("Yakin ingin menghapus supplier produk ini?")) return;
     await deleteSupplierProduk(id);
     fetchData();
   };
@@ -42,8 +42,8 @@ export default function HargaProdukPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Manajemen Harga Produk Supplier</h1>
-        <Button onClick={() => setOpen(true)}>+ Tambah Harga Produk</Button>
+        <h1 className="text-2xl font-bold">Manajemen Supplier Produk</h1>
+        <Button onClick={() => setOpen(true)}>+ Tambah Supplier Produk</Button>
       </div>
 
       <TabelHargaProduk

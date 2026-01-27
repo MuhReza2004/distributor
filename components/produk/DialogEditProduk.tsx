@@ -49,9 +49,6 @@ export const DialogEditProduk: React.FC<DialogEditProdukProps> = ({
       nama: "",
       satuan: "Pcs",
       kategori: "",
-      hargaJual: 0,
-      stok: 0,
-      minStok: 0,
       status: "aktif",
     },
   });
@@ -143,81 +140,18 @@ export const DialogEditProduk: React.FC<DialogEditProdukProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="hargaJual" className="font-semibold">
-                Harga Jual *
-              </Label>
-              <Input
-                id="hargaJual"
-                type="number"
-                placeholder="Masukkan harga jual"
-                {...register("hargaJual", {
-                  required: "Harga jual wajib diisi",
-                  min: { value: 0, message: "Harga jual minimal 0" },
-                })}
-                className={errors.hargaJual ? "border-red-500" : ""}
-              />
-              {errors.hargaJual && (
-                <p className="text-sm text-red-500">
-                  {errors.hargaJual.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="stok" className="font-semibold">
-                Stok *
-              </Label>
-              <Input
-                id="stok"
-                type="number"
-                placeholder="Masukkan stok"
-                {...register("stok", {
-                  required: "Stok wajib diisi",
-                  min: { value: 0, message: "Stok minimal 0" },
-                })}
-                className={errors.stok ? "border-red-500" : ""}
-              />
-              {errors.stok && (
-                <p className="text-sm text-red-500">{errors.stok.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="minStok" className="font-semibold">
-                Minimum Stok *
-              </Label>
-              <Input
-                id="minStok"
-                type="number"
-                placeholder="Masukkan minimum stok"
-                {...register("minStok", {
-                  required: "Minimum stok wajib diisi",
-                  min: { value: 0, message: "Minimum stok minimal 0" },
-                })}
-                className={errors.minStok ? "border-red-500" : ""}
-              />
-              {errors.minStok && (
-                <p className="text-sm text-red-500">{errors.minStok.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status" className="font-semibold">
-                Status *
-              </Label>
-              <select
-                id="status"
-                {...register("status")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="aktif">Aktif</option>
-                <option value="nonaktif">Nonaktif</option>
-              </select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="status" className="font-semibold">
+              Status *
+            </Label>
+            <select
+              id="status"
+              {...register("status")}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="aktif">Aktif</option>
+              <option value="nonaktif">Nonaktif</option>
+            </select>
           </div>
 
           <DialogFooter>

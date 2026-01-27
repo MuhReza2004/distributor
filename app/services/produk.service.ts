@@ -84,7 +84,11 @@ export const getAllProduk = async (): Promise<Produk[]> => {
 
   return snap.docs.map((d) => ({
     id: d.id,
-    ...d.data(),
+    kode: d.data().kode,
+    nama: d.data().nama,
+    kategori: d.data().kategori,
+    satuan: d.data().satuan,
+    status: d.data().status,
     createdAt: d.data().createdAt?.toDate(),
     updatedAt: d.data().updatedAt?.toDate(),
   })) as Produk[];

@@ -5,14 +5,16 @@ export interface ProdukFormData {
   nama: string; // Nama produk
   satuan: string; // Satuan (pcs, sak, kg, liter)
   kategori: string; // Kategori produk
-  hargaJual: number; // Harga jual
-  stok: number; // Stok saat ini
-  minStok: number; // Minimum stok
   status: ProdukStatus; // Status (aktif / nonaktif)
 }
 
-export interface Produk extends ProdukFormData {
+export interface Produk {
   id: string;
+  kode: string;
+  nama: string;
+  kategori: string;
+  satuan: string;
+  status: ProdukStatus;
   createdAt?: Date;
   updatedAt?: Date;
 }

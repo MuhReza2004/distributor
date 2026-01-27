@@ -6,7 +6,7 @@ import {
   updatePenjualan,
   generateInvoiceNumber,
 } from "@/app/services/penjualan.service";
-import { PenjualanItem, Penjualan } from "@/app/types/penjualan";
+import { PenjualanDetail, Penjualan } from "@/app/types/penjualan";
 import { Produk } from "@/app/types/produk";
 import { Pelanggan } from "@/app/types/pelanggan";
 import { Button } from "@/components/ui/button";
@@ -65,7 +65,7 @@ export default function PenjualanForm({
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [produkList, setProdukList] = useState<Produk[]>([]);
   const [pelangganList, setPelangganList] = useState<Pelanggan[]>([]);
-  const [items, setItems] = useState<PenjualanItem[]>([]);
+  const [items, setItems] = useState<PenjualanDetail[]>([]);
   const [status, setStatus] = useState<"Lunas" | "Belum Lunas">("Lunas");
   const [metodePembayaran, setMetodePembayaran] = useState<
     "Tunai" | "Transfer"

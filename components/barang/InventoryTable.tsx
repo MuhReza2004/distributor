@@ -43,8 +43,12 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
           <TableRow className="bg-gray-100">
             <TableHead>Nama Produk</TableHead>
             <TableHead className="text-right">Stok Awal</TableHead>
-            <TableHead className="text-right text-green-600">Stok Masuk</TableHead>
-            <TableHead className="text-right text-red-600">Stok Keluar</TableHead>
+            <TableHead className="text-right text-green-600">
+              Stok Masuk
+            </TableHead>
+            <TableHead className="text-right text-red-600">
+              Stok Keluar
+            </TableHead>
             <TableHead className="text-right">Stok Akhir</TableHead>
           </TableRow>
         </TableHeader>
@@ -53,11 +57,17 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
             const stokAwal = item.stok - item.totalMasuk + item.totalKeluar;
             return (
               <TableRow key={item.id} className="border-b hover:bg-gray-50">
-                <TableCell className="font-medium">{item.nameProduk}</TableCell>
+                <TableCell className="font-medium">{item.nama}</TableCell>
                 <TableCell className="text-right">{stokAwal}</TableCell>
-                <TableCell className="text-right text-green-600">+{item.totalMasuk}</TableCell>
-                <TableCell className="text-right text-red-600">-{item.totalKeluar}</TableCell>
-                <TableCell className="text-right font-semibold">{item.stok}</TableCell>
+                <TableCell className="text-right text-green-600">
+                  +{item.totalMasuk}
+                </TableCell>
+                <TableCell className="text-right text-red-600">
+                  -{item.totalKeluar}
+                </TableCell>
+                <TableCell className="text-right font-semibold">
+                  {item.stok}
+                </TableCell>
               </TableRow>
             );
           })}

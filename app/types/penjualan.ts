@@ -1,9 +1,9 @@
-export interface PenjualanItem {
+export interface PenjualanDetail {
+  id?: string;
+  penjualanId?: string;
   produkId: string;
-  namaProduk: string;
-  satuan: string;
-  hargaJual: number;
   qty: number;
+  harga: number;
   subtotal: number;
 }
 
@@ -15,7 +15,6 @@ export interface Penjualan {
   namaToko: string;
   alamatPelanggan: string;
   tanggal: string;
-  items: PenjualanItem[];
   total: number;
   diskon: number;
   pajak: number;
@@ -27,5 +26,7 @@ export interface Penjualan {
   namaPemilikRekening?: string;
   pajakEnabled: boolean;
   tanggalJatuhTempo?: string;
-  createdAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+  items?: PenjualanDetail[]; // populated from penjualan_detail
 }

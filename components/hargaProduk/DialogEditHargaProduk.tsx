@@ -44,11 +44,14 @@ export default function DialogEditHargaProduk({
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Produk[]>([]);
   const [displayPrice, setDisplayPrice] = useState("");
+  const [displaySellPrice, setDisplaySellPrice] = useState("");
 
   const [formData, setFormData] = useState<SupplierProdukFormData>({
     supplierId: "",
     produkId: "",
     hargaBeli: 0,
+    hargaJual: 0,
+    stok: 0,
   });
 
   useEffect(() => {
@@ -69,8 +72,11 @@ export default function DialogEditHargaProduk({
         supplierId: item.supplierId,
         produkId: item.produkId,
         hargaBeli: item.hargaBeli,
+        hargaJual: item.hargaJual,
+        stok: item.stok,
       });
       setDisplayPrice(formatRupiah(item.hargaBeli));
+      setDisplaySellPrice(formatRupiah(item.hargaJual));
     }
   }, [item]);
 
@@ -81,6 +87,15 @@ export default function DialogEditHargaProduk({
 
     setFormData((p) => ({ ...p, hargaBeli: numberValue }));
     setDisplayPrice(formatRupiah(numberValue));
+  };
+
+  const handleSellPriceChange = (value: string) => {
+    // Remove non-numeric characters except comma and dot
+    const numericValue = value.replace(/[^\d]/g, "");
+    const numberValue = parseInt(numericValue) || 0;
+
+    setFormData((p) => ({ ...p, hargaJual: numberValue }));
+    setDisplaySellPrice(formatRupiah(numberValue));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,12 +115,12 @@ export default function DialogEditHargaProduk({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Edit Harga Produk Supplier</DialogTitle>
+          <DialogTitle>Edit Supplier Produk</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>Supplier</Label>
+            <Label>Supplier *</Label>
             <Select
               value={formData.supplierId}
               onValueChange={(val) =>
@@ -126,7 +141,7 @@ export default function DialogEditHargaProduk({
           </div>
 
           <div>
-            <Label>Produk</Label>
+            <Label>Produk *</Label>
             <Select
               value={formData.produkId}
               onValueChange={(val) =>
@@ -139,7 +154,7 @@ export default function DialogEditHargaProduk({
               <SelectContent>
                 {products.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.nameProduk}
+                    {p.nama}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -147,11 +162,37 @@ export default function DialogEditHargaProduk({
           </div>
 
           <div>
-            <Label>Harga Beli</Label>
+            <Label>Harga Beli *</Label>
             <Input
               value={displayPrice}
               onChange={(e) => handlePriceChange(e.target.value)}
               placeholder="Rp 0"
+              required
+            />
+          </div>
+
+          <div>
+            <Label>Harga Jual *</Label>
+            <Input
+              value={displaySellPrice}
+              onChange={(e) => handleSellPriceChange(e.target.value)}
+              placeholder="Rp 0"
+              required
+            />
+          </div>
+
+          <div>
+            <Label>Stok Fisik *</Label>
+            <Input
+              type="number"
+              value={formData.stok}
+              onChange={(e) =>
+                setFormData((p) => ({
+                  ...p,
+                  stok: parseInt(e.target.value) || 0,
+                }))
+              }
+              placeholder="0"
               required
             />
           </div>
