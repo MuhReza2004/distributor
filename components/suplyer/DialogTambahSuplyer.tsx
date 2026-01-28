@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 import { SupplierFormData } from "@/app/types/suplyer";
-import { addSupplier } from "@/app/services/supplyer.service";
+import { addSupplier, getAllSuppliers } from "@/app/services/supplyer.service";
 
 interface Props {
   open: boolean;
@@ -28,6 +28,7 @@ export default function DialogTambahSupplier({
   onSuccess,
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
 
   const [formData, setFormData] = useState<SupplierFormData>({
     kode: "",
@@ -44,15 +45,40 @@ export default function DialogTambahSupplier({
     e.preventDefault();
     setLoading(true);
 
-    // Generate kode automatically
-    const kode = `SUP-${Date.now()}`;
-    const dataWithKode = { ...formData, kode };
+    try {
+      // Fetch all existing suppliers to check for duplicates
+      const existingSuppliers = await getAllSuppliers();
 
-    await addSupplier(dataWithKode);
+      // Check for duplicate name (case-insensitive)
+      const isDuplicate = existingSuppliers.some(
+        (supplier) =>
+          supplier.nama.toLowerCase() === formData.nama.toLowerCase(),
+      );
 
-    setLoading(false);
-    onSuccess?.();
-    onOpenChange(false);
+      if (isDuplicate) {
+        setError(
+          "Nama supplier sudah terdaftar. Silakan gunakan nama yang berbeda.",
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Generate kode automatically
+      const kode = `SUP-${Date.now()}`;
+      const dataWithKode = { ...formData, kode };
+
+      await addSupplier(dataWithKode);
+
+      setLoading(false);
+      onSuccess?.();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error adding supplier:", error);
+      setError(
+        "Terjadi kesalahan saat menambahkan supplier. Silakan coba lagi.",
+      );
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,11 +93,13 @@ export default function DialogTambahSupplier({
             <Label>Nama Supplier</Label>
             <Input
               value={formData.nama}
-              onChange={(e) =>
-                setFormData((p) => ({ ...p, nama: e.target.value }))
-              }
+              onChange={(e) => {
+                setFormData((p) => ({ ...p, nama: e.target.value }));
+                setError(""); // Clear error when user starts typing
+              }}
               required
             />
+            {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
           </div>
 
           <div>

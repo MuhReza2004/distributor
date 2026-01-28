@@ -30,6 +30,7 @@ export default function EditSupplierDialog({
   const [alamat, setAlamat] = useState("");
   const [telp, setTelp] = useState("");
   const [status, setStatus] = useState(true);
+  const [error, setError] = useState<string>("");
 
   /* =====================
      INIT DATA
@@ -46,8 +47,22 @@ export default function EditSupplierDialog({
   /* =====================
      SAVE
      ===================== */
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!supplier) return;
+
+    // Check for duplicate name
+    const allSuppliers = await getAllSuppliers();
+    const isDuplicate = allSuppliers.some(
+      (s) =>
+        s.nama.toLowerCase() === nama.toLowerCase() && s.id !== supplier.id,
+    );
+
+    if (isDuplicate) {
+      setError("Nama supplier sudah terdaftar!");
+      return;
+    }
+
+    setError("");
 
     onSave({
       ...supplier,
@@ -71,7 +86,14 @@ export default function EditSupplierDialog({
         <div className="space-y-4">
           <div>
             <Label>Nama Supplier</Label>
-            <Input value={nama} onChange={(e) => setNama(e.target.value)} />
+            <Input
+              value={nama}
+              onChange={(e) => {
+                setNama(e.target.value);
+                setError("");
+              }}
+            />
+            {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
           </div>
 
           <div>

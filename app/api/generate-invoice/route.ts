@@ -97,7 +97,6 @@ async function generatePdf(
 ): Promise<Uint8Array> {
   // The customer store name ('namaToko') is now passed directly in the 'penjualan' object.
 
-
   // Calculate total amount for terbilang
   const subTotal = (penjualan.items || []).reduce(
     (sum, item) => sum + item.subtotal,
@@ -128,7 +127,7 @@ async function generatePdf(
   <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Invoice ${penjualan.nomorInvoice}</title>
+    <title>Invoice ${penjualan.noInvoice}</title>
     <style>
       * {
         margin: 0;

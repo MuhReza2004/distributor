@@ -59,8 +59,8 @@ export default function TambahPenjualanPage() {
 
   const [pelangganId, setPelangganId] = useState("");
   const [catatan, setCatatan] = useState("");
-  const [noInvoice, setNoInvoice] = useState("");
-  const [noSuratJalan, setNoSuratJalan] = useState("");
+  const [noInvoice, setNoInvoice] = useState("Generating...");
+  const [noSuratJalan, setNoSuratJalan] = useState("Generating...");
   const [supplierProdukList, setSupplierProdukList] = useState<
     SupplierProduk[]
   >([]);
@@ -68,6 +68,13 @@ export default function TambahPenjualanPage() {
   const [pelangganList, setPelangganList] = useState<Pelanggan[]>([]);
   const [supplierList, setSupplierList] = useState<Supplier[]>([]);
   const [items, setItems] = useState<PenjualanDetail[]>([]);
+  const [currentItem, setCurrentItem] = useState<{
+    supplierProdukId: string;
+    qty: number;
+  }>({
+    supplierProdukId: "",
+    qty: 1,
+  });
   const [status, setStatus] = useState<"Lunas" | "Belum Lunas">("Lunas");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -175,16 +182,60 @@ export default function TambahPenjualanPage() {
     loadData();
   }, [editId]);
 
-  const addItem = () => {
-    setItems([
-      ...items,
-      {
-        supplierProdukId: "",
-        qty: 1,
-        harga: 0,
-        subtotal: 0,
-      },
-    ]);
+  const addItemToList = () => {
+    if (!currentItem.supplierProdukId || currentItem.qty <= 0) {
+      setError("Pilih produk dan masukkan jumlah yang valid");
+      return;
+    }
+
+    const supplierProduk = supplierProdukList.find(
+      (sp) => sp.id === currentItem.supplierProdukId,
+    );
+
+    if (!supplierProduk) {
+      setError("Produk tidak ditemukan");
+      return;
+    }
+
+    if (currentItem.qty > supplierProduk.stok) {
+      const produk = produkList.find((p) => p.id === supplierProduk.produkId);
+      setError(
+        `Stok ${produk?.nama || "Produk"} tidak mencukupi (sisa: ${supplierProduk.stok})`,
+      );
+      return;
+    }
+
+    // Check if product already exists in items
+    const existingIndex = items.findIndex(
+      (item) => item.supplierProdukId === currentItem.supplierProdukId,
+    );
+
+    if (existingIndex >= 0) {
+      // Update existing item quantity
+      const newItems = [...items];
+      newItems[existingIndex].qty += currentItem.qty;
+      newItems[existingIndex].subtotal =
+        newItems[existingIndex].harga * newItems[existingIndex].qty;
+      setItems(newItems);
+    } else {
+      // Add new item
+      setItems([
+        ...items,
+        {
+          supplierProdukId: currentItem.supplierProdukId,
+          qty: currentItem.qty,
+          harga: supplierProduk.hargaJual,
+          subtotal: supplierProduk.hargaJual * currentItem.qty,
+        },
+      ]);
+    }
+
+    // Reset current item
+    setCurrentItem({
+      supplierProdukId: "",
+      qty: 1,
+    });
+    setError(null);
   };
 
   const updateItem = (i: number, field: string, value: any) => {
@@ -618,146 +669,203 @@ export default function TambahPenjualanPage() {
                         <Package className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold">Daftar Produk</h3>
+                        <h3 className="text-lg font-semibold">Input Produk</h3>
                         <p className="text-sm text-emerald-100">
-                          {items.length} produk ditambahkan
+                          Pilih produk dan jumlah, lalu klik tambah
                         </p>
                       </div>
                     </div>
-                    <Button
-                      onClick={addItem}
-                      size="sm"
-                      className="bg-white text-emerald-600 hover:bg-emerald-50 font-semibold"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Tambah
-                    </Button>
                   </div>
                 </div>
 
-                <div className="p-6">
-                  {items.length > 0 ? (
-                    <div className="space-y-3">
-                      {items.map((item, i) => {
-                        const selectedSupplierProduk = supplierProdukList.find(
-                          (sp) => sp.id === item.supplierProdukId,
-                        );
-                        const selectedProduk = produkList.find(
-                          (p) => p.id === selectedSupplierProduk?.produkId,
-                        );
+                <div className="p-6 space-y-6">
+                  {/* Current Item Input */}
+                  <Card className="p-4 border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Package className="h-5 w-5 text-emerald-600" />
+                        <h4 className="font-semibold text-slate-800">
+                          Tambah Produk Baru
+                        </h4>
+                      </div>
 
-                        return (
-                          <Card
-                            key={i}
-                            className="p-4 border-2 hover:border-emerald-300 hover:shadow-md transition-all duration-200 bg-gradient-to-br from-white to-slate-50"
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Product Selection */}
+                        <div className="md:col-span-2">
+                          <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                            Pilih Produk
+                          </Label>
+                          <Select
+                            onValueChange={(val) =>
+                              setCurrentItem((prev) => ({
+                                ...prev,
+                                supplierProdukId: val,
+                              }))
+                            }
+                            value={currentItem.supplierProdukId}
                           >
-                            <div className="space-y-4">
-                              {/* Product Selection */}
-                              <div className="flex items-start gap-3">
-                                <div className="flex-1">
-                                  <Label className="text-xs font-medium text-slate-600 mb-2 flex items-center gap-1">
-                                    <Package className="h-3 w-3" />
-                                    Produk
-                                  </Label>
-                                  <Select
-                                    onValueChange={(val) =>
-                                      updateItem(i, "supplierProdukId", val)
-                                    }
-                                    value={item.supplierProdukId}
+                            <SelectTrigger className="h-12 border-2">
+                              <SelectValue placeholder="Pilih Produk" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {supplierProdukList.map((sp) => {
+                                const produk = produkList.find(
+                                  (p) => p.id === sp.produkId,
+                                );
+                                return (
+                                  <SelectItem
+                                    key={sp.id}
+                                    value={sp.id}
+                                    disabled={sp.stok === 0}
                                   >
-                                    <SelectTrigger className="h-11 border-2">
-                                      <SelectValue placeholder="Pilih Produk" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {supplierProdukList.map((sp) => {
-                                        const produk = produkList.find(
-                                          (p) => p.id === sp.produkId,
-                                        );
-                                        return (
-                                          <SelectItem
-                                            key={sp.id}
-                                            value={sp.id}
-                                            disabled={sp.stok === 0}
-                                          >
-                                            <div className="flex justify-between items-center w-full gap-4">
-                                              <span className="font-medium">
-                                                {produk?.nama ||
-                                                  "Produk Tidak Ditemukan"}
-                                              </span>
-                                              <Badge
-                                                variant={
-                                                  sp.stok > 10
-                                                    ? "default"
-                                                    : sp.stok > 0
-                                                      ? "outline"
-                                                      : "destructive"
-                                                }
-                                                className="text-xs"
-                                              >
-                                                Stok: {sp.stok}
-                                              </Badge>
-                                            </div>
-                                          </SelectItem>
-                                        );
-                                      })}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeItem(i)}
-                                  className="mt-6 hover:bg-red-50 hover:text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+                                    <div className="flex justify-between items-center w-full gap-4">
+                                      <span className="font-medium">
+                                        {produk?.nama ||
+                                          "Produk Tidak Ditemukan"}
+                                      </span>
+                                      <Badge
+                                        variant={
+                                          sp.stok > 10
+                                            ? "default"
+                                            : sp.stok > 0
+                                              ? "outline"
+                                              : "destructive"
+                                        }
+                                        className="text-xs"
+                                      >
+                                        Stok: {sp.stok}
+                                      </Badge>
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                              {/* Quantity, Price, Subtotal */}
-                              <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                  <Label className="text-xs font-medium text-slate-600 mb-2 block">
-                                    Jumlah
-                                  </Label>
-                                  <Input
-                                    type="number"
-                                    min={1}
-                                    max={selectedSupplierProduk?.stok}
-                                    value={item.qty}
-                                    onChange={(e) =>
-                                      updateItem(
-                                        i,
-                                        "qty",
-                                        Number(e.target.value),
-                                      )
-                                    }
-                                    disabled={!item.supplierProdukId}
-                                    className="h-11 text-center font-semibold border-2"
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-xs font-medium text-slate-600 mb-2 block">
-                                    Harga Satuan
-                                  </Label>
-                                  <div className="h-11 px-3 py-2 bg-slate-100 border-2 border-slate-200 rounded-lg font-semibold text-slate-700 flex items-center">
-                                    {formatRupiah(item.harga)}
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label className="text-xs font-medium text-slate-600 mb-2 block">
-                                    Subtotal
-                                  </Label>
-                                  <div className="h-11 px-3 py-2 bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-lg font-bold text-emerald-700 flex items-center">
-                                    {formatRupiah(item.subtotal)}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        );
-                      })}
+                        {/* Quantity Input */}
+                        <div>
+                          <Label className="text-sm font-medium text-slate-700 mb-2 block">
+                            Jumlah
+                          </Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={currentItem.qty}
+                            onChange={(e) =>
+                              setCurrentItem((prev) => ({
+                                ...prev,
+                                qty: Number(e.target.value),
+                              }))
+                            }
+                            className="h-12 text-center font-semibold border-2"
+                            placeholder="1"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Add Button */}
+                      <Button
+                        onClick={addItemToList}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Tambah ke Daftar
+                      </Button>
                     </div>
-                  ) : (
+                  </Card>
+
+                  {/* Items Table */}
+                  {items.length > 0 && (
+                    <Card className="overflow-hidden border-none shadow-lg bg-white/80 backdrop-blur-sm">
+                      <div className="bg-gradient-to-r from-slate-600 to-slate-700 p-4 text-white">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-5 w-5" />
+                          <h4 className="font-semibold">
+                            Daftar Produk ({items.length})
+                          </h4>
+                        </div>
+                      </div>
+
+                      <div className="p-4">
+                        <div className="space-y-3">
+                          {items.map((item, i) => {
+                            const selectedSupplierProduk =
+                              supplierProdukList.find(
+                                (sp) => sp.id === item.supplierProdukId,
+                              );
+                            const selectedProduk = produkList.find(
+                              (p) => p.id === selectedSupplierProduk?.produkId,
+                            );
+
+                            return (
+                              <Card
+                                key={i}
+                                className="p-4 border-2 hover:border-slate-300 hover:shadow-md transition-all duration-200 bg-gradient-to-br from-white to-slate-50"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    {/* Product Name */}
+                                    <div>
+                                      <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                                        Produk
+                                      </Label>
+                                      <div className="font-semibold text-slate-800">
+                                        {selectedProduk?.nama ||
+                                          "Produk Tidak Ditemukan"}
+                                      </div>
+                                    </div>
+
+                                    {/* Quantity */}
+                                    <div>
+                                      <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                                        Jumlah
+                                      </Label>
+                                      <div className="font-semibold text-slate-800">
+                                        {item.qty}
+                                      </div>
+                                    </div>
+
+                                    {/* Unit Price */}
+                                    <div>
+                                      <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                                        Harga Satuan
+                                      </Label>
+                                      <div className="font-semibold text-slate-800">
+                                        {formatRupiah(item.harga)}
+                                      </div>
+                                    </div>
+
+                                    {/* Subtotal */}
+                                    <div>
+                                      <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                                        Subtotal
+                                      </Label>
+                                      <div className="font-bold text-emerald-700">
+                                        {formatRupiah(item.subtotal)}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Remove Button */}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeItem(i)}
+                                    className="ml-4 hover:bg-red-50 hover:text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {items.length === 0 && (
                     <div className="border-2 border-dashed border-slate-200 rounded-xl p-16 text-center bg-gradient-to-br from-slate-50 to-slate-100">
                       <div className="w-20 h-20 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Package className="h-10 w-10 text-slate-400" />
@@ -766,16 +874,8 @@ export default function TambahPenjualanPage() {
                         Belum Ada Produk
                       </p>
                       <p className="text-sm text-slate-500 mb-4">
-                        Klik tombol "Tambah" untuk menambahkan produk
+                        Pilih produk di atas dan klik "Tambah ke Daftar"
                       </p>
-                      <Button
-                        onClick={addItem}
-                        variant="outline"
-                        className="border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Tambah Produk Pertama
-                      </Button>
                     </div>
                   )}
                 </div>
@@ -797,17 +897,17 @@ export default function TambahPenjualanPage() {
                     <div>
                       <div className="text-xs text-slate-500 mb-1">Nama</div>
                       <div className="font-semibold text-slate-800">
-                        {selectedPelanggan.namaPelanggan}
+                        {selectedPelanggan?.namaPelanggan || "Tidak ada nama"}
                       </div>
                     </div>
                     <Separator />
                     <div>
                       <div className="text-xs text-slate-500 mb-1">Toko</div>
                       <div className="font-medium text-slate-700">
-                        {selectedPelanggan.namaToko}
+                        {selectedPelanggan?.namaToko || "Tidak ada toko"}
                       </div>
                     </div>
-                    {selectedPelanggan.noTelepon && (
+                    {selectedPelanggan?.noTelp && (
                       <>
                         <Separator />
                         <div>
@@ -815,7 +915,7 @@ export default function TambahPenjualanPage() {
                             Telepon
                           </div>
                           <div className="font-medium text-slate-700">
-                            {selectedPelanggan.noTelepon}
+                            {selectedPelanggan.noTelp}
                           </div>
                         </div>
                       </>

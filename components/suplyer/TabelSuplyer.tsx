@@ -22,10 +22,10 @@ export default function SupplierTable({
         <thead className="bg-gray-100">
           <tr>
             <th className="px-4 py-3">No</th>
+            <th className="px-4 py-3">Kode</th>
             <th className="px-4 py-3">Nama</th>
             <th className="px-4 py-3">Alamat</th>
-            <th className="px-4 py-3">Produk</th>
-            <th className="px-4 py-3 text-center">Jumlah</th>
+            <th className="px-4 py-3">Telepon</th>
             <th className="px-4 py-3 text-center">Status</th>
             <th className="px-4 py-3 text-center">Aksi</th>
           </tr>
