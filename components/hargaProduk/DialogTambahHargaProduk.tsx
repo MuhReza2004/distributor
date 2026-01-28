@@ -31,12 +31,14 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  preselectedSupplierId?: string;
 }
 
 export default function DialogTambahHargaProduk({
   open,
   onOpenChange,
   onSuccess,
+  preselectedSupplierId,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -61,8 +63,14 @@ export default function DialogTambahHargaProduk({
       setSuppliers(sups);
       setProducts(prods);
     };
-    if (open) fetchData();
-  }, [open]);
+    if (open) {
+      fetchData();
+      // Pre-select supplier if provided
+      if (preselectedSupplierId) {
+        setFormData((prev) => ({ ...prev, supplierId: preselectedSupplierId }));
+      }
+    }
+  }, [open, preselectedSupplierId]);
 
   const handlePriceChange = (value: string) => {
     // Remove non-numeric characters except comma and dot

@@ -18,6 +18,9 @@ export default function HargaProdukPage() {
   const [open, setOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedItem, setSelectedItem] = useState<SupplierProduk | null>(null);
+  const [preselectedSupplierId, setPreselectedSupplierId] = useState<
+    string | undefined
+  >(undefined);
 
   const fetchData = async () => {
     const res = await getAllSupplierProduk();
@@ -50,12 +53,20 @@ export default function HargaProdukPage() {
         data={data}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onAddProduct={(supplierId) => {
+          setPreselectedSupplierId(supplierId);
+          setOpen(true);
+        }}
       />
 
       <DialogTambahHargaProduk
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(open) => {
+          setOpen(open);
+          if (!open) setPreselectedSupplierId(undefined);
+        }}
         onSuccess={fetchData}
+        preselectedSupplierId={preselectedSupplierId}
       />
 
       <DialogEditHargaProduk
