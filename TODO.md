@@ -1,9 +1,11 @@
-# TODO: Replace PDF Export with Excel Export in Sales Report
+# TODO: Implement Purchase Report Feature
 
-## Tasks
+## Steps to Complete
 
-- [x] Import exceljs library in page.tsx
-- [x] Replace exportToPDF function with exportToExcel function
-- [x] Update button text from "Export PDF" to "Export Excel"
-- [x] Add print-ready styles to the table
-- [x] Test the Excel export functionality
+- [ ] Adapt the sales report code to create a purchase report page
+- [ ] Change imports to use Pembelian types and services
+- [ ] Update summary cards for purchase metrics (Total Pembelian, Total Pengeluaran, etc.)
+- [ ] Modify table columns for purchase data (Invoice, No DO, No NPB, Supplier, etc.)
+- [ ] Adjust Excel export functionality for purchase reports
+- [ ] Fetch and display supplier names in the report
+- [ ] Test the purchase report page functionality
