@@ -405,10 +405,10 @@ export default function PembelianReportPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Laporan Pembelian</h1>
-        <Button onClick={exportToExcel} variant="outline">
+        {/* <Button onClick={exportToExcel} variant="outline">
           <Download className="w-4 h-4 mr-2" />
           Export Excel
-        </Button>
+        </Button> */}
       </div>
 
       {/* Summary Cards */}
@@ -497,7 +497,7 @@ export default function PembelianReportPage() {
       <Card>
         <CardHeader className="flex flex-row justify-between ">
           <CardTitle>Detail Pembelian</CardTitle>
-          <Button onClick={exportToExcel} variant="outline">
+          <Button onClick={exportToExcel} variant="primary">
             <Download className="w-4 h-4 mr-2" />
             Export Excel
           </Button>
@@ -577,8 +577,8 @@ export default function PembelianReportPage() {
                           <Badge
                             className={
                               pembelian.status === "Lunas"
-                                ? "bg-green-600 text-white hover:bg-green-700"
-                                : "bg-red-600 text-white hover:bg-red-700"
+                                ? "bg-[#ffd9a1] text-black"
+                                : "bg-[#ffd9a1] text-black"
                             }
                           >
                             {pembelian.status}

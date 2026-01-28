@@ -136,7 +136,7 @@ export const TabelPelanggan: React.FC<TabelPelangganProps> = ({
                   <div className="flex justify-center gap-2">
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="primary"
                       onClick={() => onEdit(customer)}
                       className="h-8 px-2"
                       title="Edit"
@@ -145,7 +145,7 @@ export const TabelPelanggan: React.FC<TabelPelangganProps> = ({
                     </Button>
                     <Button
                       size="sm"
-                      variant="destructive"
+                      variant="remove"
                       onClick={() => {
                         setDeleteingId(customer.idPelanggan);
                         onDelete(customer);

@@ -82,15 +82,17 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-white border-r">
-      <Image
-        src="/logo.svg"
-        alt="Logo"
-        width={100}
-        height={100}
-        className="p-4 flex items-center justify-center "
-      />
-      <div className=" font-bold text-lg">PT. Sumber Alam Pasangkayu</div>
+    <aside className="w-64 bg-white border-r flex flex-col">
+      {/* Centered Logo Section */}
+      <div className="flex justify-center items-center py-8 border-b">
+        <Image
+          src="/logo.svg"
+          alt="Logo"
+          width={130}
+          height={130}
+          className="object-contain"
+        />
+      </div>
 
       {error && (
         <div className="px-4 py-2 text-xs text-yellow-600 bg-yellow-50 border-b">
@@ -98,7 +100,8 @@ export default function Sidebar() {
         </div>
       )}
 
-      <nav className="space-y-1 px-2 py-2">
+      {/* Navigation Menu */}
+      <nav className="flex-1 space-y-1 px-2 py-2 overflow-y-auto">
         {menusToShow.length > 0 ? (
           menusToShow.map((menu) => {
             // Handle nested menu structure (jika ada children)
@@ -114,7 +117,7 @@ export default function Sidebar() {
                       className={
                         pathname.startsWith(menu.href)
                           ? "text-blue-600"
-                          : "text-gray-700"
+                          : "bg-blue-600text-gray-700"
                       }
                     >
                       {menu.label}
@@ -133,8 +136,8 @@ export default function Sidebar() {
                           href={child.href}
                           className={`block px-3 py-2 rounded-md text-sm ml-4 ${
                             pathname === child.href
-                              ? "bg-blue-600 text-white"
-                              : "hover:bg-gray-100"
+                              ? " bg-[#099696] text-white"
+                              : "hover:bg-[#ff6a00] hover:text-white"
                           }`}
                         >
                           {child.label}
@@ -153,8 +156,8 @@ export default function Sidebar() {
                 href={menu.href}
                 className={`block px-3 py-2 rounded-md text-sm ${
                   pathname === menu.href
-                    ? "bg-blue-600 text-white"
-                    : "hover:bg-gray-100"
+                    ? "bg-[#099696] text-white"
+                    : "hover:bg-[#ff6a00] hover:text-white"
                 }`}
               >
                 {menu.label}

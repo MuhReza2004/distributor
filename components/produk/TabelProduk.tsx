@@ -128,7 +128,7 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
                   <div className="flex justify-center gap-2">
                     <Button
                       size="sm"
-                      variant="outline"
+                      variant="primary"
                       onClick={() => onEdit(product)}
                       className="h-8 px-2"
                       title="Edit"
@@ -137,7 +137,7 @@ export const TabelProdukNew: React.FC<TabelProdukNewProps> = ({
                     </Button>
                     <Button
                       size="sm"
-                      variant="destructive"
+                      variant="remove"
                       onClick={() => {
                         setDeletingId(product.id);
                         onDelete(product);

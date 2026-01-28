@@ -42,7 +42,9 @@ export default function SupplierPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Manajemen Supplier</h1>
-        <Button onClick={() => setOpen(true)}>+ Tambah Supplier</Button>
+        <Button variant={"primary"} onClick={() => setOpen(true)}>
+          + Tambah Supplier
+        </Button>
       </div>
 
       <SupplierTable

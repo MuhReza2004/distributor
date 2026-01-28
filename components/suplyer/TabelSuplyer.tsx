@@ -54,12 +54,16 @@ export default function SupplierTable({
 
               <td className="px-4 py-3">
                 <div className="flex justify-center gap-2">
-                  <Button size="sm" onClick={() => onEdit(supplier)}>
+                  <Button
+                    variant={"primary"}
+                    size="sm"
+                    onClick={() => onEdit(supplier)}
+                  >
                     Edit
                   </Button>
                   <Button
                     size="sm"
-                    variant="destructive"
+                    variant="remove"
                     onClick={() => onDelete(supplier.id)}
                   >
                     Hapus

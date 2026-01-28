@@ -186,7 +186,7 @@ export default function PelangganAdminPage() {
               setSelectedCustomer(null);
               setDialogTambahOpen(true);
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            variant={"primary"}
           >
             <Plus className="w-4 h-4 mr-2" />
             Tambah Pelanggan

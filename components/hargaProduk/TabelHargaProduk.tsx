@@ -71,7 +71,7 @@ export default function TabelHargaProduk({
             <Button
               onClick={() => onAddProduct(supplierId)}
               size="sm"
-              className="bg-green-600 hover:bg-green-700"
+              variant="primary"
             >
               + Tambah Produk
             </Button>
@@ -111,7 +111,7 @@ export default function TabelHargaProduk({
                         </Button>
                         <Button
                           size="sm"
-                          variant="destructive"
+                          variant="remove"
                           onClick={() => onDelete(item.id)}
                         >
                           Hapus

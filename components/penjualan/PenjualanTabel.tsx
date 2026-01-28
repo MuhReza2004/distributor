@@ -119,8 +119,8 @@ export default function PenjualanTabel({
                 <Badge
                   className={
                     penjualan.status === "Lunas"
-                      ? "bg-green-600 text-white hover:bg-green-700"
-                      : "bg-red-600 text-white hover:bg-red-700"
+                      ? "bg-[#ffd9a1] text-black"
+                      : "bg-[#ffd9a1] text-black"
                   }
                 >
                   {penjualan.status}
@@ -147,7 +147,7 @@ export default function PenjualanTabel({
                   </Button>
 
                   <Button
-                    variant="destructive"
+                    variant="remove"
                     size="sm"
                     onClick={() => onCancel(penjualan.id!)}
                   >
@@ -158,7 +158,7 @@ export default function PenjualanTabel({
                     <Button
                       size="sm"
                       onClick={() => onUpdateStatus(penjualan.id!, "Lunas")}
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-[#ffd9a1] text-black"
                     >
                       Tandai Lunas
                     </Button>
