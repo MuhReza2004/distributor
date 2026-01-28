@@ -45,6 +45,8 @@ export default function DialogTambahHargaProduk({
   const [products, setProducts] = useState<Produk[]>([]);
   const [displayPrice, setDisplayPrice] = useState("");
   const [displaySellPrice, setDisplaySellPrice] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const [formData, setFormData] = useState<SupplierProdukFormData>({
     supplierId: "",
@@ -53,6 +55,10 @@ export default function DialogTambahHargaProduk({
     hargaJual: 0,
     stok: 0,
   });
+
+  const filteredProducts = products.filter((p) =>
+    p.nama.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,11 +79,24 @@ export default function DialogTambahHargaProduk({
       });
       setDisplayPrice("");
       setDisplaySellPrice("");
+      setSearchQuery("");
+      setShowDropdown(false);
     };
     if (open) {
       fetchData();
     }
   }, [open, preselectedSupplierId]);
+
+  useEffect(() => {
+    if (formData.produkId && products.length > 0) {
+      const selectedProduct = products.find((p) => p.id === formData.produkId);
+      if (selectedProduct) {
+        setSearchQuery(selectedProduct.nama);
+      }
+    } else if (!formData.produkId) {
+      setSearchQuery("");
+    }
+  }, [formData.produkId, products]);
 
   const handlePriceChange = (value: string) => {
     // Remove non-numeric characters except comma and dot
@@ -137,25 +156,36 @@ export default function DialogTambahHargaProduk({
             </Select>
           </div>
 
-          <div>
+          <div className="relative">
             <Label>Produk *</Label>
-            <Select
-              value={formData.produkId}
-              onValueChange={(val) =>
-                setFormData((p) => ({ ...p, produkId: val }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih Produk" />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
+            <Input
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+              placeholder="Cari Produk"
+              required
+            />
+            {showDropdown && filteredProducts.length > 0 && (
+              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                {filteredProducts.map((p) => (
+                  <div
+                    key={p.id}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      setFormData((prev) => ({ ...prev, produkId: p.id }));
+                      setSearchQuery(p.nama);
+                      setShowDropdown(false);
+                    }}
+                  >
                     {p.nama}
-                  </SelectItem>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            )}
           </div>
 
           <div>
