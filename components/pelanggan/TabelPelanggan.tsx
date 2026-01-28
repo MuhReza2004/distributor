@@ -37,7 +37,7 @@ export const TabelPelanggan: React.FC<TabelPelangganProps> = ({
     const search = searchTerm.toLowerCase();
     return customers.filter(
       (c) =>
-        c.namePelanggan.toLowerCase().includes(search) ||
+        c.namaPelanggan.toLowerCase().includes(search) ||
         c.kodePelanggan.toLowerCase().includes(search) ||
         c.idPelanggan.toLowerCase().includes(search) ||
         c.nib.toLowerCase().includes(search) ||
@@ -110,7 +110,7 @@ export const TabelPelanggan: React.FC<TabelPelangganProps> = ({
                   {index + 1}
                 </TableCell>
                 <TableCell className="text-gray-700 font-medium">
-                  {customer.namePelanggan}
+                  {customer.namaPelanggan}
                 </TableCell>
 
                 <TableCell className="text-gray-700 text-sm">

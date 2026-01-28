@@ -68,7 +68,7 @@ export const DialogPelangganDuplikat: React.FC<
             <div className="space-y-1 text-sm text-gray-600">
               <p>
                 <span className="font-medium">Nama:</span>{" "}
-                {existingCustomer.namePelanggan}
+                {existingCustomer.namaPelanggan}
               </p>
               <p>
                 <span className="font-medium">No. Telp:</span>{" "}
@@ -96,7 +96,7 @@ export const DialogPelangganDuplikat: React.FC<
               <p>
                 <span className="font-medium">Nama:</span>{" "}
                 <span className="font-semibold text-green-600">
-                  {newData.namePelanggan}
+                  {newData.namaPelanggan}
                 </span>
               </p>
               <p>

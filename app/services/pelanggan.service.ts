@@ -94,15 +94,36 @@ export const getAllPelanggan = async (): Promise<Pelanggan[]> => {
 export const getPelangganById = async (
   id: string,
 ): Promise<Pelanggan | null> => {
-  const snap = await getDoc(doc(db, "pelanggan", id));
-  if (!snap.exists()) return null;
+  if (!id) return null;
 
-  return {
-    id: snap.id,
-    ...snap.data(),
-    createdAt: snap.data().createdAt?.toDate(),
-    updatedAt: snap.data().updatedAt?.toDate(),
-  } as Pelanggan;
+  // First, try to get the document by its Firestore ID
+  const docRef = doc(db, "pelanggan", id);
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    return {
+      id: docSnap.id,
+      ...docSnap.data(),
+      createdAt: docSnap.data().createdAt?.toDate(),
+      updatedAt: docSnap.data().updatedAt?.toDate(),
+    } as Pelanggan;
+  }
+
+  // If not found, fallback to querying by the custom idPelanggan field
+  const q = query(collection(db, "pelanggan"), where("idPelanggan", "==", id));
+  const querySnap = await getDocs(q);
+
+  if (!querySnap.empty) {
+    const snap = querySnap.docs[0];
+    return {
+      id: snap.id,
+      ...snap.data(),
+      createdAt: snap.data().createdAt?.toDate(),
+      updatedAt: snap.data().updatedAt?.toDate(),
+    } as Pelanggan;
+  }
+
+  return null;
 };
 
 /* =============================

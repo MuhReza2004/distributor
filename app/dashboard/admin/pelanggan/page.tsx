@@ -42,7 +42,7 @@ export default function PelangganAdminPage() {
       q,
       (snapshot) => {
         const data = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as Pelanggan),
+          (doc) => ({ id: doc.id, ...doc.data() }) as Pelanggan,
         );
         setCustomers(data);
         setIsLoading(false);
@@ -92,7 +92,7 @@ export default function PelangganAdminPage() {
 
     // A new object is created with only the properties of `PelangganFormData`
     const cleanData: Partial<PelangganFormData> = {
-      namePelanggan: data.namePelanggan,
+      namaPelanggan: data.namaPelanggan,
       kodePelanggan: data.kodePelanggan,
       namaToko: data.namaToko,
       nib: data.nib,

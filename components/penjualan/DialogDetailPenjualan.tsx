@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Penjualan } from "@/app/types/penjualan";
+import { Pelanggan } from "@/app/types/pelanggan";
 import { formatRupiah } from "@/helper/format";
+import { getPelangganById } from "@/app/services/pelanggan.service";
 import { FileText, Printer, Eye } from "lucide-react";
 
 interface DialogDetailPenjualanProps {
@@ -34,7 +36,38 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
   onOpenChange,
   penjualan,
 }) => {
+  const [pelanggan, setPelanggan] = useState<Pelanggan | null>(null);
+
+  useEffect(() => {
+    const fetchPelanggan = async () => {
+      if (penjualan?.pelangganId) {
+        try {
+          const customerData = await getPelangganById(penjualan.pelangganId);
+          setPelanggan(customerData);
+        } catch (error) {
+          console.error("Error fetching customer data:", error);
+          setPelanggan(null);
+        }
+      }
+    };
+
+    if (open && penjualan) {
+      fetchPelanggan();
+    }
+  }, [open, penjualan]);
+
   if (!penjualan) return null;
+
+  const subTotal =
+    penjualan.items?.reduce((sum, item) => sum + item.subtotal, 0) || 0;
+
+  const diskonAmount =
+    penjualan.diskon && penjualan.diskon > 0
+      ? (subTotal * penjualan.diskon) / 100
+      : 0;
+
+  const totalSetelahDiskon = subTotal - diskonAmount;
+  const pajakAmount = penjualan.pajakEnabled ? totalSetelahDiskon * 0.11 : 0;
 
   const handlePrintInvoice = async () => {
     try {
@@ -87,11 +120,14 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
             <div>
               <p className="text-sm text-gray-500">Pelanggan</p>
               <p className="font-semibold">{penjualan.namaPelanggan}</p>
-              {penjualan.alamatPelanggan}
             </div>
             <div>
-              <p className="text-sm text-gray-500">Alamat</p>
-              {penjualan.alamatPelanggan}
+              <p className="text-sm text-gray-500">Nama Toko</p>
+              <p className="font-semibold">{pelanggan?.namaToko || "-"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Alamat Pelanggan</p>
+              <p className="font-semibold">{penjualan.alamatPelanggan}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Tanggal</p>
@@ -121,36 +157,42 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
             <p className="font-semibold capitalize">
               {penjualan.metodePembayaran}
             </p>
-            {penjualan.nomorRekening && (
-              <p className="text-xs text-gray-600 mt-1">
-                Nama Bank: {penjualan.namaBank}
-              </p>
-            )}
-            {penjualan.nomorRekening && (
-              <p className="text-xs text-gray-600 mt-1">
-                Nama Pemilik Rekening: {penjualan.namaPemilikRekening}
-              </p>
-            )}
-            {penjualan.nomorRekening && (
-              <p className="text-xs text-gray-600 mt-1">
-                Nomor Rekening: {penjualan.nomorRekening}
-              </p>
-            )}
+            {penjualan.metodePembayaran === "Transfer" &&
+              penjualan.namaBank && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Nama Bank: {penjualan.namaBank}
+                </p>
+              )}
+            {penjualan.metodePembayaran === "Transfer" &&
+              penjualan.namaPemilikRekening && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Nama Pemilik Rekening: {penjualan.namaPemilikRekening}
+                </p>
+              )}
+            {penjualan.metodePembayaran === "Transfer" &&
+              penjualan.nomorRekening && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Nomor Rekening: {penjualan.nomorRekening}
+                </p>
+              )}
           </div>
 
-          <div>
-            <p>Tanggal Jatuh Tempo</p>
-            <p className="font-semibold">
-              {new Date(penjualan.tanggalJatuhTempo).toLocaleDateString(
-                "id-ID",
-                {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                },
-              )}
-            </p>
-          </div>
+          {penjualan.status === "Belum Lunas" &&
+            penjualan.tanggalJatuhTempo && (
+              <div>
+                <p>Tanggal Jatuh Tempo</p>
+                <p className="font-semibold">
+                  {new Date(penjualan.tanggalJatuhTempo).toLocaleDateString(
+                    "id-ID",
+                    {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    },
+                  )}
+                </p>
+              </div>
+            )}
 
           <div>
             <h3 className="font-semibold mb-2">Item yang Dibeli:</h3>
@@ -166,21 +208,34 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {penjualan.items.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{item.namaProduk}</TableCell>
-                      <TableCell className="text-center">{item.qty}</TableCell>
-                      <TableCell className="text-center">
-                        {item.satuan}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatRupiah(item.hargaJual)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatRupiah(item.subtotal)}
+                  {penjualan.items && penjualan.items.length > 0 ? (
+                    penjualan.items.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{item.namaProduk}</TableCell>
+                        <TableCell className="text-center">
+                          {item.qty}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {item.satuan}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatRupiah(item.hargaJual || 0)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatRupiah(item.subtotal)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center text-gray-500"
+                      >
+                        Tidak ada item
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -190,22 +245,20 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 space-y-3">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>Subtotal:</div>
-                <div className="text-right">
-                  {formatRupiah(penjualan.total)}
-                </div>
-                {penjualan.diskon > 0 && (
+                <div className="text-right">{formatRupiah(subTotal)}</div>
+                {penjualan.diskon && penjualan.diskon > 0 && (
                   <>
-                    <div>Diskon:</div>
+                    <div>Diskon ({penjualan.diskon}%):</div>
                     <div className="text-right text-red-600">
-                      -{formatRupiah(penjualan.diskon)}
+                      -{formatRupiah(diskonAmount)}
                     </div>
                   </>
                 )}
-                {penjualan.pajakEnabled && penjualan.pajak > 0 && (
+                {penjualan.pajakEnabled && pajakAmount > 0 && (
                   <>
                     <div>PPN 11%:</div>
                     <div className="text-right">
-                      {formatRupiah(penjualan.pajak)}
+                      {formatRupiah(pajakAmount)}
                     </div>
                   </>
                 )}
@@ -216,7 +269,7 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
                     Total Akhir
                   </span>
                   <span className="text-3xl font-bold text-green-600">
-                    {formatRupiah(penjualan.totalAkhir)}
+                    {formatRupiah(penjualan.total)}
                   </span>
                 </div>
               </div>

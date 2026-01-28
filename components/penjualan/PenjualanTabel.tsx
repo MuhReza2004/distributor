@@ -64,9 +64,10 @@ export default function PenjualanTabel({
         <TableHeader>
           <TableRow className="bg-gray-100">
             <TableHead>Invoice</TableHead>
+            <TableHead>Surat Jalan</TableHead>
             <TableHead>Tanggal</TableHead>
             <TableHead>Pelanggan</TableHead>
-            <TableHead>Nama Produk</TableHead>
+            <TableHead>Produk Dibeli</TableHead>
             <TableHead className="text-right">Total</TableHead>
             <TableHead className="text-center">Status</TableHead>
             <TableHead className="text-center">Aksi</TableHead>
@@ -77,15 +78,40 @@ export default function PenjualanTabel({
           {data.map((penjualan) => (
             <TableRow key={penjualan.id}>
               <TableCell className="font-medium">
-                {penjualan.nomorInvoice}
+                {penjualan.noInvoice}
+              </TableCell>
+              <TableCell className="font-medium">
+                {penjualan.noSuratJalan}
               </TableCell>
               <TableCell>
                 {new Date(penjualan.tanggal).toLocaleDateString("id-ID")}
               </TableCell>
-              <TableCell>{penjualan.namaPelanggan}</TableCell>
-              <TableCell>{penjualan.items[0].namaProduk}</TableCell>
+              <TableCell>
+                <p className="font-medium">
+                  {penjualan.namaPelanggan || "Pelanggan Tidak Diketahui"}
+                </p>
+                {penjualan.alamatPelanggan && (
+                  <p className="text-sm text-gray-500">
+                    {penjualan.alamatPelanggan}
+                  </p>
+                )}
+              </TableCell>
+              <TableCell>
+                {penjualan.items && penjualan.items.length > 0 ? (
+                  <ul className="list-disc pl-4 text-xs">
+                    {penjualan.items.map((item) => (
+                      <li key={item.id}>
+                        {item.namaProduk} ({item.qty} x{" "}
+                        {formatRupiah(item.hargaJual || 0)})
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-gray-500">Tidak ada item</p>
+                )}
+              </TableCell>
               <TableCell className="text-right">
-                {formatRupiah(penjualan.totalAkhir)}
+                {formatRupiah(penjualan.total)}
               </TableCell>
 
               {/* === STATUS BADGE (DIPERBAIKI) === */}

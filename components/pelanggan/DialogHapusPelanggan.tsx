@@ -55,7 +55,7 @@ export const DialogHapusPelanggan: React.FC<DialogHapusPelangganProps> = ({
             </p>
             <p className="text-sm text-gray-600 mt-2">
               <span className="font-semibold">Nama:</span>{" "}
-              {pelanggan.namePelanggan}
+              {pelanggan.namaPelanggan}
             </p>
             <p className="text-sm text-gray-600 mt-2">
               <span className="font-semibold">No. Telp:</span>{" "}

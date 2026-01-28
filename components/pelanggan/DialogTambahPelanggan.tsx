@@ -37,7 +37,7 @@ export const DialogTambahPelanggan: React.FC<DialogTambahPelangganProps> = ({
     formState: { errors },
   } = useForm<PelangganFormData>({
     defaultValues: {
-      namePelanggan: "",
+      namaPelanggan: "",
       kodePelanggan: "",
       namaToko: "",
       nib: "",
@@ -87,21 +87,21 @@ export const DialogTambahPelanggan: React.FC<DialogTambahPelangganProps> = ({
           {/* Row 1: Nama & Kode */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="namePelanggan" className="font-semibold">
+              <Label htmlFor="namaPelanggan" className="font-semibold">
                 Nama Pelanggan *
               </Label>
               <Input
-                id="namePelanggan"
+                id="namaPelanggan"
                 placeholder="Masukkan nama pelanggan"
-                {...register("namePelanggan", {
+                {...register("namaPelanggan", {
                   required: "Nama pelanggan wajib diisi",
                   minLength: { value: 3, message: "Minimal 3 karakter" },
                 })}
-                className={errors.namePelanggan ? "border-red-500" : ""}
+                className={errors.namaPelanggan ? "border-red-500" : ""}
               />
-              {errors.namePelanggan && (
+              {errors.namaPelanggan && (
                 <p className="text-sm text-red-500">
-                  {errors.namePelanggan.message}
+                  {errors.namaPelanggan.message}
                 </p>
               )}
             </div>

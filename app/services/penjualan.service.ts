@@ -5,6 +5,7 @@ import {
   doc,
   increment,
   getDocs,
+  getDoc,
   orderBy,
   query,
   runTransaction,
@@ -12,21 +13,25 @@ import {
 } from "firebase/firestore";
 import { Penjualan, PenjualanDetail } from "@/app/types/penjualan";
 import { db } from "../lib/firebase";
-import { Produk } from "../types/produk";
+import { Produk } from "@/app/types/produk";
 
 export const createPenjualan = async (data: Penjualan) => {
   // Use a transaction to ensure stock validation and updates are atomic
   await runTransaction(db, async (transaction) => {
     // 1. Validate stock for all items
     for (const item of data.items || []) {
-      const produkRef = doc(db, "produk", item.produkId);
-      const produkDoc = await transaction.get(produkRef);
+      const supplierProdukRef = doc(
+        db,
+        "supplier_produk",
+        item.supplierProdukId,
+      );
+      const supplierProdukDoc = await transaction.get(supplierProdukRef);
 
-      if (!produkDoc.exists()) {
-        throw new Error(`Produk tidak ditemukan.`);
+      if (!supplierProdukDoc.exists()) {
+        throw new Error(`Produk supplier tidak ditemukan.`);
       }
 
-      const currentStok = produkDoc.data().stok;
+      const currentStok = supplierProdukDoc.data().stok;
       if (currentStok < item.qty) {
         throw new Error(
           `Stok produk tidak mencukupi. Sisa stok: ${currentStok}`,
@@ -44,15 +49,19 @@ export const createPenjualan = async (data: Penjualan) => {
     for (const item of data.items || []) {
       await addDoc(collection(db, "penjualan_detail"), {
         penjualanId: penjualanRef.id,
-        produkId: item.produkId,
+        supplierProdukId: item.supplierProdukId,
         qty: item.qty,
         harga: item.harga,
         subtotal: item.subtotal,
       });
 
       // Update stock
-      const produkRef = doc(db, "produk", item.produkId);
-      transaction.update(produkRef, {
+      const supplierProdukRef = doc(
+        db,
+        "supplier_produk",
+        item.supplierProdukId,
+      );
+      transaction.update(supplierProdukRef, {
         stok: increment(-item.qty),
       });
     }
@@ -69,21 +78,72 @@ export const getAllPenjualan = async (): Promise<Penjualan[]> => {
     const penjualanData = docSnap.data() as Penjualan;
     const penjualanId = docSnap.id;
 
+    // Fetch pelanggan name - try by document id first
+    let pelangganData = null;
+    const pelangganDoc = await getDoc(
+      doc(db, "pelanggan", penjualanData.pelangganId),
+    );
+
+    if (pelangganDoc.exists()) {
+      pelangganData = pelangganDoc.data();
+    } else {
+      // Fallback: search by idPelanggan field
+      const pelangganQuery = query(
+        collection(db, "pelanggan"),
+        where("idPelanggan", "==", penjualanData.pelangganId),
+      );
+      const pelangganSnap = await getDocs(pelangganQuery);
+      if (!pelangganSnap.empty) {
+        pelangganData = pelangganSnap.docs[0].data();
+      }
+    }
+
     // Fetch details
     const detailQuery = query(
       collection(db, "penjualan_detail"),
       where("penjualanId", "==", penjualanId),
     );
     const detailSnap = await getDocs(detailQuery);
-    const details = detailSnap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-    })) as PenjualanDetail[];
+    const details: PenjualanDetail[] = [];
+
+    for (const detailDoc of detailSnap.docs) {
+      const detailData = detailDoc.data();
+      const supplierProdukDoc = await getDoc(
+        doc(db, "supplier_produk", detailData.supplierProdukId),
+      );
+      const supplierProdukData = supplierProdukDoc.data();
+
+      if (supplierProdukData) {
+        const produkDoc = await getDoc(
+          doc(db, "produk", supplierProdukData.produkId),
+        );
+        const produkData = produkDoc.data();
+
+        details.push({
+          id: detailDoc.id,
+          ...detailData,
+          namaProduk: produkData?.nama || "Produk Tidak Ditemukan",
+          satuan: produkData?.satuan || "",
+          hargaJual: supplierProdukData.hargaJual || detailData.harga,
+        } as PenjualanDetail);
+      } else {
+        details.push({
+          id: detailDoc.id,
+          ...detailData,
+          namaProduk: "Produk Tidak Ditemukan",
+          satuan: "",
+          hargaJual: detailData.harga,
+        } as PenjualanDetail);
+      }
+    }
 
     penjualanList.push({
       id: penjualanId,
       ...penjualanData,
+      namaPelanggan: pelangganData?.namaPelanggan || "Unknown",
+      alamatPelanggan: pelangganData?.alamat || "",
       items: details, // Add items for compatibility
+      pajak: penjualanData.pajak || 0, // Ensure pajak field is included
     });
   }
 
@@ -116,23 +176,27 @@ export const updatePenjualan = async (id: string, data: Partial<Penjualan>) => {
       const produkReads: { [key: string]: any } = {};
 
       for (const item of data.items) {
-        const produkRef = doc(db, "produk", item.produkId);
-        const produkDoc = await transaction.get(produkRef);
+        const supplierProdukRef = doc(
+          db,
+          "supplier_produk",
+          item.supplierProdukId,
+        );
+        const supplierProdukDoc = await transaction.get(supplierProdukRef);
 
-        if (!produkDoc.exists()) {
-          throw new Error(`Produk tidak ditemukan.`);
+        if (!supplierProdukDoc.exists()) {
+          throw new Error(`Produk supplier tidak ditemukan.`);
         }
 
-        produkReads[item.produkId] = {
-          ref: produkRef,
-          data: produkDoc.data(),
+        produkReads[item.supplierProdukId] = {
+          ref: supplierProdukRef,
+          data: supplierProdukDoc.data(),
           newQty: item.qty,
         };
       }
 
       // Validate stock for new items
       for (const item of data.items) {
-        const produkInfo = produkReads[item.produkId];
+        const produkInfo = produkReads[item.supplierProdukId];
         const currentStok = produkInfo.data.stok;
         if (currentStok < item.qty) {
           throw new Error(
@@ -143,15 +207,23 @@ export const updatePenjualan = async (id: string, data: Partial<Penjualan>) => {
 
       // Now do all writes: restore old stock, then deduct new stock
       for (const item of currentData.items || []) {
-        const produkRef = doc(db, "produk", item.produkId);
-        transaction.update(produkRef, {
+        const supplierProdukRef = doc(
+          db,
+          "supplier_produk",
+          item.supplierProdukId,
+        );
+        transaction.update(supplierProdukRef, {
           stok: increment(item.qty),
         });
       }
 
       for (const item of data.items) {
-        const produkRef = doc(db, "produk", item.produkId);
-        transaction.update(produkRef, {
+        const supplierProdukRef = doc(
+          db,
+          "supplier_produk",
+          item.supplierProdukId,
+        );
+        transaction.update(supplierProdukRef, {
           stok: increment(-item.qty),
         });
       }
@@ -177,9 +249,13 @@ export const deletePenjualan = async (id: string) => {
     const penjualanData = penjualanDoc.data() as Penjualan;
 
     // Restore stock for all items
-    for (const item of penjualanData.items) {
-      const produkRef = doc(db, "produk", item.produkId);
-      transaction.update(produkRef, {
+    for (const item of penjualanData.items || []) {
+      const supplierProdukRef = doc(
+        db,
+        "supplier_produk",
+        item.supplierProdukId,
+      );
+      transaction.update(supplierProdukRef, {
         stok: increment(item.qty),
       });
     }
@@ -211,4 +287,28 @@ export const generateInvoiceNumber = async (): Promise<string> => {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `INV/${year}${month}${day}/${String(next).padStart(4, "0")}`;
+};
+
+export const generateSuratJalanNumber = async (): Promise<string> => {
+  const counterRef = doc(db, "counters", "suratJalan");
+
+  const next = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef);
+
+    if (!snap.exists()) {
+      tx.set(counterRef, { lastNumber: 1 });
+      return 1;
+    }
+
+    const nextNumber = snap.data().lastNumber + 1;
+    tx.update(counterRef, { lastNumber: nextNumber });
+    return nextNumber;
+  });
+
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `SJ/${year}${month}${day}/${String(next).padStart(4, "0")}`;
 };

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import puppeteer from "puppeteer";
 import { Penjualan } from "@/app/types/penjualan";
+import { getPelangganById } from "@/app/services/pelanggan.service";
 
 function numberToWords(num: number): string {
   const units = [
@@ -92,6 +93,28 @@ function numberToWords(num: number): string {
 }
 
 async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
+  // Fetch customer data to get store name
+  let customerData = null;
+  if (penjualan.pelangganId) {
+    try {
+      customerData = await getPelangganById(penjualan.pelangganId);
+    } catch (error) {
+      console.error("Error fetching customer data:", error);
+    }
+  }
+
+  // Calculate total amount for terbilang
+  const subTotal = (penjualan.items || []).reduce(
+    (sum, item) => sum + item.subtotal,
+    0,
+  );
+  const diskonAmount = penjualan.diskon
+    ? (subTotal * penjualan.diskon) / 100
+    : 0;
+  const totalSetelahDiskon = subTotal - diskonAmount;
+  const pajakAmount = penjualan.pajakEnabled ? totalSetelahDiskon * 0.11 : 0;
+  const totalAkhir = totalSetelahDiskon + pajakAmount;
+
   const browser = await puppeteer.launch({
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -539,7 +562,7 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
           <div class="invoice-meta">
         <div class="invoice-item">
           <span class="label">No Invoice</span>
-          <span class="value">${penjualan.nomorInvoice}</span>
+          <span class="value">${penjualan.nomorInvoice || penjualan.noInvoice}</span>
         </div>
         <div class="invoice-item">
           <span class="label">Tanggal</span>
@@ -585,7 +608,7 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
           </div>
           <div class="customer-item">
             <span class="label">Toko</span>
-            <span class="value">${penjualan.namaToko || "-"}</span>
+            <span class="value">${customerData?.namaToko || "-"}</span>
           </div>
           <div class="customer-item">
             <span class="label">Status</span>
@@ -595,7 +618,21 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
 
         <div class="amount-highlight">
           <p>Total Yang Harus Dibayar</p>
-          <div class="amount">Rp ${penjualan.totalAkhir.toLocaleString("id-ID")}</div>
+          <div class="amount">Rp ${(() => {
+            const subTotal = (penjualan.items || []).reduce(
+              (sum, item) => sum + item.subtotal,
+              0,
+            );
+            const diskonAmount = penjualan.diskon
+              ? (subTotal * penjualan.diskon) / 100
+              : 0;
+            const totalSetelahDiskon = subTotal - diskonAmount;
+            const pajakAmount = penjualan.pajakEnabled
+              ? totalSetelahDiskon * 0.11
+              : 0;
+            const totalAkhir = totalSetelahDiskon + pajakAmount;
+            return totalAkhir.toLocaleString("id-ID");
+          })()}</div>
         </div>
       </div>
 
@@ -612,7 +649,7 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
           </tr>
         </thead>
         <tbody>
-          ${penjualan.items
+          ${(penjualan.items || [])
             .map(
               (item, i) => `
             <tr>
@@ -620,7 +657,7 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
               <td><strong>${item.namaProduk}</strong></td>
               <td class="text-center">${item.qty}</td>
               <td class="text-center">${item.satuan}</td>
-              <td class="text-right">Rp ${item.hargaJual.toLocaleString("id-ID")}</td>
+              <td class="text-right">Rp ${(item.hargaJual || 0).toLocaleString("id-ID")}</td>
               <td class="text-right"><strong>Rp ${item.subtotal.toLocaleString("id-ID")}</strong></td>
             </tr>
           `,
@@ -631,7 +668,7 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
 
       <!-- TERBILANG -->
       <div class="terbilang-section">
-        <p><strong>Terbilang:</strong> <em>${numberToWords(Math.floor(penjualan.totalAkhir))}</em></p>
+        <p><strong>Terbilang:</strong> <em>${numberToWords(Math.floor(totalAkhir))}</em></p>
       </div>
 
       <!-- SUMMARY -->
@@ -640,31 +677,71 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
           <table>
             <tr>
               <td>Subtotal</td>
-              <td class="text-right">Rp ${penjualan.total.toLocaleString("id-ID")}</td>
+              <td class="text-right">Rp ${(() => {
+                const subTotal = (penjualan.items || []).reduce(
+                  (sum, item) => sum + item.subtotal,
+                  0,
+                );
+                return subTotal.toLocaleString("id-ID");
+              })()}</td>
             </tr>
             ${
-              penjualan.diskon > 0
-                ? `
+              penjualan.diskon && penjualan.diskon > 0
+                ? (() => {
+                    const subTotal = (penjualan.items || []).reduce(
+                      (sum, item) => sum + item.subtotal,
+                      0,
+                    );
+                    const diskonAmount = (subTotal * penjualan.diskon) / 100;
+                    return `
               <tr>
-                <td>Diskon</td>
-                <td class="text-right">- Rp ${penjualan.diskon.toLocaleString("id-ID")}</td>
+                <td>Diskon (${penjualan.diskon}%)</td>
+                <td class="text-right">- Rp ${diskonAmount.toLocaleString("id-ID")}</td>
               </tr>
-            `
+            `;
+                  })()
                 : ""
             }
             ${
-              penjualan.pajakEnabled && penjualan.pajak > 0
-                ? `
+              penjualan.pajakEnabled
+                ? (() => {
+                    const subTotal = (penjualan.items || []).reduce(
+                      (sum, item) => sum + item.subtotal,
+                      0,
+                    );
+                    const diskonAmount = penjualan.diskon
+                      ? (subTotal * penjualan.diskon) / 100
+                      : 0;
+                    const totalSetelahDiskon = subTotal - diskonAmount;
+                    const pajakAmount = totalSetelahDiskon * 0.11;
+                    return pajakAmount > 0
+                      ? `
               <tr>
                 <td>PPN 11%</td>
-                <td class="text-right">Rp ${penjualan.pajak.toLocaleString("id-ID")}</td>
+                <td class="text-right">Rp ${pajakAmount.toLocaleString("id-ID")}</td>
               </tr>
             `
+                      : "";
+                  })()
                 : ""
             }
             <tr>
               <td><strong>TOTAL</strong></td>
-              <td class="text-right"><strong>Rp ${penjualan.totalAkhir.toLocaleString("id-ID")}</strong></td>
+              <td class="text-right"><strong>Rp ${(() => {
+                const subTotal = (penjualan.items || []).reduce(
+                  (sum, item) => sum + item.subtotal,
+                  0,
+                );
+                const diskonAmount = penjualan.diskon
+                  ? (subTotal * penjualan.diskon) / 100
+                  : 0;
+                const totalSetelahDiskon = subTotal - diskonAmount;
+                const pajakAmount = penjualan.pajakEnabled
+                  ? totalSetelahDiskon * 0.11
+                  : 0;
+                const totalAkhir = totalSetelahDiskon + pajakAmount;
+                return totalAkhir.toLocaleString("id-ID");
+              })()}</strong></td>
             </tr>
           </table>
         </div>
@@ -719,13 +796,13 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (
-      !penjualan.nomorInvoice ||
+      (!penjualan.nomorInvoice && !penjualan.noInvoice) ||
       !penjualan.namaPelanggan ||
       !penjualan.items ||
       penjualan.items.length === 0
     ) {
       throw new Error(
-        "Missing required fields: nomorInvoice, namaPelanggan, or items",
+        "Missing required fields: nomorInvoice/noInvoice, namaPelanggan, or items",
       );
     }
 
@@ -745,7 +822,7 @@ export async function POST(request: NextRequest) {
     return new NextResponse(pdfData as any, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Invoice_${penjualan.nomorInvoice}.pdf"`,
+        "Content-Disposition": `attachment; filename="Invoice_${penjualan.nomorInvoice || penjualan.noInvoice}.pdf"`,
       },
     });
   } catch (error) {
