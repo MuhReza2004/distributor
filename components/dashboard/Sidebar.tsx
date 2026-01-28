@@ -4,13 +4,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { dashboardMenus } from "@/constants/menu";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
+import { ChevronDown } from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { role, loading, error } = useUserRole();
   const [timeoutReached, setTimeoutReached] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+
+  const handleMenuClick = (href: string) => {
+    setExpandedMenus((prev) =>
+      prev.includes(href)
+        ? prev.filter((item) => item !== href)
+        : [...prev, href],
+    );
+  };
 
   // Timeout fallback jika loading terlalu lama
   useEffect(() => {
@@ -22,6 +32,40 @@ export default function Sidebar() {
       return () => clearTimeout(timer);
     }
   }, [loading]);
+
+  // Tentukan menu yang akan ditampilkan
+  const menusToShow = useMemo(() => {
+    if (role && !timeoutReached && !error) {
+      // Filter menu berdasarkan role
+      return dashboardMenus.filter((menu) => {
+        if ("children" in menu && (menu as any).children) {
+          return (menu as any).children.some((child: any) =>
+            child.roles.includes(role),
+          );
+        }
+        return menu.roles.includes(role);
+      });
+    } else {
+      // Fallback: tampilkan menu admin jika role tidak ditemukan
+      return dashboardMenus.filter((menu) => {
+        if ("children" in menu && (menu as any).children) {
+          return (menu as any).children.some((child: any) =>
+            child.roles.includes("admin"),
+          );
+        }
+        return menu.roles.includes("admin");
+      });
+    }
+  }, [role, timeoutReached, error]);
+
+  useEffect(() => {
+    const parentMenu = menusToShow.find(
+      (menu) => "children" in menu && pathname.startsWith(menu.href),
+    );
+    if (parentMenu) {
+      setExpandedMenus([parentMenu.href]);
+    }
+  }, [pathname, menusToShow]);
 
   // Jika loading dan belum timeout, tampilkan loading state
   if (loading && !timeoutReached) {
@@ -35,34 +79,6 @@ export default function Sidebar() {
         </nav>
       </aside>
     );
-  }
-
-  // Tentukan menu yang akan ditampilkan
-  // Jika role tidak ada atau timeout/error, gunakan fallback ke admin menu
-  let menusToShow = dashboardMenus;
-
-  if (role && !timeoutReached && !error) {
-    // Filter menu berdasarkan role
-    menusToShow = dashboardMenus.filter((menu) => {
-      // Handle menu dengan children (jika ada)
-      if ("children" in menu && (menu as any).children) {
-        return (menu as any).children.some((child: any) =>
-          child.roles.includes(role),
-        );
-      }
-      // Handle menu biasa
-      return menu.roles.includes(role);
-    });
-  } else {
-    // Fallback: tampilkan menu admin jika role tidak ditemukan
-    menusToShow = dashboardMenus.filter((menu) => {
-      if ("children" in menu && (menu as any).children) {
-        return (menu as any).children.some((child: any) =>
-          child.roles.includes("admin"),
-        );
-      }
-      return menu.roles.includes("admin");
-    });
   }
 
   return (
@@ -87,30 +103,45 @@ export default function Sidebar() {
           menusToShow.map((menu) => {
             // Handle nested menu structure (jika ada children)
             if ("children" in menu && (menu as any).children) {
+              const isExpanded = expandedMenus.includes(menu.href);
               return (
-                <div key={menu.label} className="space-y-1">
-                  <div
-                    className={`px-3 py-2 text-sm font-medium ${
-                      pathname.startsWith(menu.href) || menu.href === "#"
-                        ? "text-blue-600"
-                        : "text-gray-700"
-                    }`}
+                <div key={menu.label}>
+                  <button
+                    onClick={() => handleMenuClick(menu.href)}
+                    className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium text-left hover:bg-gray-100 rounded-md"
                   >
-                    {menu.label}
-                  </div>
-                  {(menu as any).children.map((child: any) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className={`block px-3 py-2 rounded-md text-sm ml-4 ${
-                        pathname === child.href
-                          ? "bg-blue-600 text-white"
-                          : "hover:bg-gray-100"
-                      }`}
+                    <span
+                      className={
+                        pathname.startsWith(menu.href)
+                          ? "text-blue-600"
+                          : "text-gray-700"
+                      }
                     >
-                      {child.label}
-                    </Link>
-                  ))}
+                      {menu.label}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {isExpanded && (
+                    <div className="space-y-1 mt-1">
+                      {(menu as any).children.map((child: any) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={`block px-3 py-2 rounded-md text-sm ml-4 ${
+                            pathname === child.href
+                              ? "bg-blue-600 text-white"
+                              : "hover:bg-gray-100"
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             }

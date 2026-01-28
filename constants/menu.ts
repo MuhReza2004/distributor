@@ -56,6 +56,28 @@ export const dashboardMenus: MenuItem[] = [
       },
     ],
   },
+  {
+    label: "Laporan",
+    href: "/dashboard/admin/laporan",
+    roles: ["admin"],
+    children: [
+      {
+        label: "Laporan Pembelian",
+        href: "/dashboard/admin/laporan/pembelian",
+        roles: ["admin"],
+      },
+      {
+        label: "Laporan Penjualan",
+        href: "/dashboard/admin/laporan/penjualan",
+        roles: ["admin"],
+      },
+      {
+        label: "Laporan Stok",
+        href: "/dashboard/admin/laporan/stok",
+        roles: ["admin"],
+      },
+    ],
+  },
   // {
   //   label: "Penjualan",
   //   href: "/dashboard/admin/orders",
