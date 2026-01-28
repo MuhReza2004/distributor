@@ -16,7 +16,7 @@ export interface Pembelian {
   invoice?: string;
   total: number;
   status: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: Date | any;
+  updatedAt?: Date | any;
   items?: PembelianDetail[]; // populated from pembelian_detail
 }

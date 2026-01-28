@@ -454,11 +454,11 @@ export default function PembelianForm({ onSuccess }: PembelianFormProps) {
               className="w-full sm:w-auto min-w-[200px]"
             >
               {isLoading ? (
-                "Menyimpan..."
+                "Memproses..."
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Simpan Pembelian
+                  Proses Pembelian
                 </>
               )}
             </Button>

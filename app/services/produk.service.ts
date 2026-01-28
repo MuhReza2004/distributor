@@ -68,6 +68,7 @@ export const getNewKodeProduk = async (): Promise<string> => {
 export const addProduk = async (data: ProdukFormData): Promise<string> => {
   const ref = await addDoc(collection(db, "produk"), {
     ...data,
+    stok: 0, // Initialize stock to 0
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -88,6 +89,7 @@ export const getAllProduk = async (): Promise<Produk[]> => {
     nama: d.data().nama,
     kategori: d.data().kategori,
     satuan: d.data().satuan,
+    stok: d.data().stok || 0,
     status: d.data().status,
     createdAt: d.data().createdAt?.toDate(),
     updatedAt: d.data().updatedAt?.toDate(),
@@ -100,7 +102,12 @@ export const getProdukById = async (id: string): Promise<Produk | null> => {
 
   return {
     id: snap.id,
-    ...snap.data(),
+    kode: snap.data().kode,
+    nama: snap.data().nama,
+    kategori: snap.data().kategori,
+    satuan: snap.data().satuan,
+    stok: snap.data().stok || 0,
+    status: snap.data().status,
     createdAt: snap.data().createdAt?.toDate(),
     updatedAt: snap.data().updatedAt?.toDate(),
   } as Produk;
@@ -115,6 +122,16 @@ export const updateProduk = async (
 ): Promise<void> => {
   await updateDoc(doc(db, "produk", id), {
     ...data,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const updateProdukStok = async (
+  id: string,
+  newStok: number,
+): Promise<void> => {
+  await updateDoc(doc(db, "produk", id), {
+    stok: newStok,
     updatedAt: serverTimestamp(),
   });
 };

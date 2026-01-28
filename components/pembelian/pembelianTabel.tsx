@@ -14,6 +14,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Package,
   Calendar,
   FileText,
@@ -28,6 +35,7 @@ import { getAllSupplierProduk } from "@/app/services/supplierProduk.service";
 import { Supplier, SupplierProduk } from "@/app/types/suplyer";
 import { Produk } from "@/app/types/produk";
 import DialogDetailPembelian from "./DialogDetailPembelian";
+import { updatePembelianStatus } from "@/app/services/pembelian.service";
 
 export default function PembelianTable({ data }: { data: Pembelian[] }) {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -37,6 +45,28 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
     null,
   );
   const [detailOpen, setDetailOpen] = useState(false);
+  const [localData, setLocalData] = useState<Pembelian[]>(data);
+
+  useEffect(() => {
+    setLocalData(data);
+  }, [data]);
+
+  const handleStatusChange = async (id: string, status: string) => {
+    // Optimistic UI update
+    setLocalData((prevData) =>
+      prevData.map((p) => (p.id === id ? { ...p, status } : p)),
+    );
+
+    try {
+      await updatePembelianStatus(id, status);
+      // Optionally, you can add a success notification here
+    } catch (error) {
+      // Revert the change if the update fails
+      setLocalData(data);
+      // Optionally, you can add an error notification here
+      console.error("Failed to update status:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,7 +82,7 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
 
   // Hitung total per bulan
   const totalPerBulan = useMemo(() => {
-    const grouped = data.reduce(
+    const grouped = localData.reduce(
       (acc, p) => {
         const date = new Date(p.tanggal);
         const bulanTahun = `${date.getFullYear()}-${String(
@@ -87,8 +117,8 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
 
   // Hitung grand total
   const grandTotal = useMemo(() => {
-    return data.reduce((sum, p) => sum + p.total, 0);
-  }, [data]);
+    return localData.reduce((sum, p) => sum + p.total, 0);
+  }, [localData]);
 
   return (
     <div className="space-y-4">
@@ -142,15 +172,18 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                 Total
               </TableHead>
               <TableHead className="font-semibold text-gray-700 text-center">
+                Status
+              </TableHead>
+              <TableHead className="font-semibold text-gray-700 text-center">
                 Aksi
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.length === 0 ? (
+            {localData.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={10}
                   className="text-center py-12 text-gray-500"
                 >
                   <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -158,7 +191,7 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((p, idx) => (
+              localData.map((p, idx) => (
                 <TableRow
                   key={p.id}
                   className={`hover:bg-blue-50/50 transition-colors ${
@@ -282,26 +315,58 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                     </span>
                   </TableCell>
                   <TableCell className="text-center">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedPembelian(p);
-                        setDetailOpen(true);
-                      }}
+                    <Badge
+                      className={`${
+                        p.status === "completed"
+                          ? "bg-green-100 text-green-800"
+                          : p.status === "processing"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-gray-100 text-gray-800"
+                      }`}
                     >
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                      {p.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedPembelian(p);
+                          setDetailOpen(true);
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Select
+                        name="status"
+                        defaultValue={p.status}
+                        value={p.status}
+                        onValueChange={(newStatus) =>
+                          handleStatusChange(p.id, newStatus)
+                        }
+                      >
+                        <SelectTrigger className="w-[120px] h-9">
+                          <SelectValue placeholder="Ubah Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
-          {data.length > 0 && (
+          {localData.length > 0 && (
             <TableFooter>
               <TableRow className=" bg-green-600">
                 <TableCell
-                  colSpan={8}
+                  colSpan={9}
                   className="text-white font-bold text-base"
                 >
                   <div className="flex items-center gap-2">
@@ -312,6 +377,7 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
                 <TableCell className="text-right text-white font-bold text-lg">
                   {formatRupiah(grandTotal || 0)}
                 </TableCell>
+                <TableCell />
               </TableRow>
             </TableFooter>
           )}
@@ -319,7 +385,7 @@ export default function PembelianTable({ data }: { data: Pembelian[] }) {
       </div>
 
       {/* Summary Card - Total Per Bulan */}
-      {data.length > 0 && totalPerBulan.length > 0 && (
+      {localData.length > 0 && totalPerBulan.length > 0 && (
         <div className="rounded-lg border border-gray-200 overflow-hidden shadow-sm bg-white">
           <div className="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-gray-200">
             <h3 className="font-bold text-gray-800 flex items-center gap-2">

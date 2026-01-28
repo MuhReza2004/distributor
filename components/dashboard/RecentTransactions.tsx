@@ -42,15 +42,31 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }).format(date);
+    try {
+      // Check if date is valid
+      if (
+        !date ||
+        isNaN(date.getTime()) ||
+        date.toString() === "Invalid Date"
+      ) {
+        console.error("Invalid date received:", date);
+        return "Tanggal tidak valid";
+      }
+      return new Intl.DateTimeFormat("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(date);
+    } catch (error) {
+      console.error("Error formatting date:", date, error);
+      return "Tanggal tidak valid";
+    }
   };
 
   if (isLoading) {

@@ -23,6 +23,7 @@ export interface InventoryData extends Produk {
 
 export default function InventoryPage() {
   const [produk, setProduk] = useState<Produk[]>([]);
+  const [supplierProduk, setSupplierProduk] = useState<any[]>([]);
   const [pembelian, setPembelian] = useState<Pembelian[]>([]);
   const [penjualan, setPenjualan] = useState<Penjualan[]>([]);
   const [inventoryData, setInventoryData] = useState<InventoryData[]>([]);
@@ -39,6 +40,16 @@ export default function InventoryPage() {
           snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Produk),
         ),
       (err) => setError("Gagal memuat produk."),
+    );
+
+    const qSupplierProduk = query(collection(db, "supplier_produk"));
+    const unsubSupplierProduk = onSnapshot(
+      qSupplierProduk,
+      (snap) =>
+        setSupplierProduk(
+          snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+        ),
+      (err) => setError("Gagal memuat supplier produk."),
     );
 
     const qPembelian = query(collection(db, "pembelian"));
@@ -93,43 +104,59 @@ export default function InventoryPage() {
 
     return () => {
       unsubProduk();
+      unsubSupplierProduk();
       unsubPembelian();
       unsubPenjualan();
     };
   }, []);
 
   useEffect(() => {
-    if (produk.length > 0) {
+    if (produk.length > 0 && supplierProduk.length > 0) {
       setIsLoading(true);
       const inventory: InventoryData[] = produk.map((p) => {
+        // Find all supplier products for this product
+        const relatedSupplierProduk = supplierProduk.filter(
+          (sp) => sp.produkId === p.id,
+        );
+
         const totalMasuk = pembelian.reduce((sum, beli) => {
           return (
             sum +
-            (beli.items || []).reduce(
-              (itemSum, item) =>
-                item.produkId === p.id ? itemSum + item.qty : itemSum,
-              0,
-            )
+            (beli.items || []).reduce((itemSum, item) => {
+              // Check if this item belongs to any supplier product for this product
+              const isRelated = relatedSupplierProduk.some(
+                (sp) => sp.id === item.supplierProdukId,
+              );
+              return isRelated ? itemSum + item.qty : itemSum;
+            }, 0)
           );
         }, 0);
 
         const totalKeluar = penjualan.reduce((sum, jual) => {
           return (
             sum +
-            jual.items.reduce(
-              (itemSum, item) =>
-                item.produkId === p.id ? itemSum + item.qty : itemSum,
-              0,
-            )
+            (jual.items || []).reduce((itemSum, item) => {
+              // Check if this item belongs to any supplier product for this product
+              const isRelated = relatedSupplierProduk.some(
+                (sp) => sp.id === item.supplierProdukId,
+              );
+              return isRelated ? itemSum + item.qty : itemSum;
+            }, 0)
           );
         }, 0);
 
-        return { ...p, totalMasuk, totalKeluar };
+        // Calculate current stock as sum of all supplier product stocks
+        const currentStok = relatedSupplierProduk.reduce(
+          (sum, sp) => sum + (sp.stok || 0),
+          0,
+        );
+
+        return { ...p, stok: currentStok, totalMasuk, totalKeluar };
       });
       setInventoryData(inventory);
       setIsLoading(false);
     }
-  }, [produk, pembelian, penjualan]);
+  }, [produk, supplierProduk, pembelian, penjualan]);
 
   const filteredData = useMemo(
     () =>

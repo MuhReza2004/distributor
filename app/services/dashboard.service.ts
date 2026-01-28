@@ -2,6 +2,8 @@ import {
   collection,
   query,
   getDocs,
+  getDoc,
+  doc,
   orderBy,
   limit,
   where,
@@ -146,17 +148,37 @@ const getTotalExpenses = async (): Promise<number> => {
 };
 
 const getLowStockItems = async (): Promise<LowStockItem[]> => {
-  // This is a simplified version. In a real implementation,
-  // you'd need to calculate current stock from pembelian and penjualan
-  const q = query(collection(db, "produk"), orderBy("createdAt", "desc"));
-  const snap = await getDocs(q);
+  // Get all products
+  const produkQuery = query(collection(db, "produk"));
+  const produkSnap = await getDocs(produkQuery);
+
+  // Get all supplier products to calculate current stock
+  const supplierProdukQuery = query(collection(db, "supplier_produk"));
+  const supplierProdukSnap = await getDocs(supplierProdukQuery);
+
+  const supplierProdukMap = new Map<string, any[]>();
+  supplierProdukSnap.forEach((doc) => {
+    const data = doc.data();
+    const produkId = data.produkId;
+    if (!supplierProdukMap.has(produkId)) {
+      supplierProdukMap.set(produkId, []);
+    }
+    supplierProdukMap.get(produkId)!.push(data);
+  });
 
   const lowStockItems: LowStockItem[] = [];
-  snap.forEach((doc) => {
+  produkSnap.forEach((doc) => {
     const data = doc.data() as Produk;
-    // For demo purposes, assume min stock is 10 and current stock is random
+
+    // Calculate current stock as sum of all supplier product stocks for this product
+    const relatedSupplierProduk = supplierProdukMap.get(doc.id) || [];
+    const currentStock = relatedSupplierProduk.reduce(
+      (sum, sp) => sum + (sp.stok || 0),
+      0,
+    );
+
+    // Assume minimum stock is 10 (this could be configurable per product)
     const minStock = 10;
-    const currentStock = Math.floor(Math.random() * 20); // This should be calculated properly
 
     if (currentStock < minStock) {
       lowStockItems.push({
@@ -169,7 +191,10 @@ const getLowStockItems = async (): Promise<LowStockItem[]> => {
     }
   });
 
-  return lowStockItems.slice(0, 5); // Return top 5 low stock items
+  // Sort by current stock (lowest first) and return top 5
+  return lowStockItems
+    .sort((a, b) => a.currentStock - b.currentStock)
+    .slice(0, 5);
 };
 
 const getRecentSales = async (): Promise<RecentTransaction[]> => {
@@ -181,20 +206,18 @@ const getRecentSales = async (): Promise<RecentTransaction[]> => {
   const snap = await getDocs(q);
 
   const recentSales: RecentTransaction[] = [];
-  for (const doc of snap.docs) {
-    const data = doc.data() as Penjualan;
+  for (const saleDoc of snap.docs) {
+    const data = saleDoc.data() as Penjualan;
+    console.log("Sales data createdAt:", data.createdAt, typeof data.createdAt);
     let pelangganName = "Unknown";
 
     if (data.pelangganId) {
       try {
-        const pelangganDoc = await getDocs(
-          query(
-            collection(db, "pelanggan"),
-            where("id", "==", data.pelangganId),
-          ),
+        const pelangganDoc = await getDoc(
+          doc(db, "pelanggan", data.pelangganId),
         );
-        if (!pelangganDoc.empty) {
-          const pelangganData = pelangganDoc.docs[0].data() as Pelanggan;
+        if (pelangganDoc.exists()) {
+          const pelangganData = pelangganDoc.data() as Pelanggan;
           pelangganName = pelangganData.namaToko || pelangganData.namaPelanggan;
         }
       } catch (error) {
@@ -202,10 +225,29 @@ const getRecentSales = async (): Promise<RecentTransaction[]> => {
       }
     }
 
+    let parsedDate: Date;
+    try {
+      if (data.createdAt) {
+        if (typeof data.createdAt.toDate === "function") {
+          parsedDate = data.createdAt.toDate();
+        } else if (data.createdAt instanceof Date) {
+          parsedDate = data.createdAt;
+        } else {
+          parsedDate = new Date(data.createdAt);
+        }
+      } else {
+        parsedDate = new Date();
+      }
+      console.log("Parsed date:", parsedDate);
+    } catch (error) {
+      console.error("Date parsing error:", error);
+      parsedDate = new Date();
+    }
+
     recentSales.push({
-      id: doc.id,
-      kode: data.noInvoice || `SL-${doc.id.slice(-6)}`,
-      tanggal: data.createdAt || new Date(),
+      id: saleDoc.id,
+      kode: data.noInvoice || `SL-${saleDoc.id.slice(-6)}`,
+      tanggal: parsedDate,
       total: data.total || 0,
       status: data.status || "Belum Lunas",
       pelanggan: pelangganName,
@@ -224,20 +266,20 @@ const getRecentPurchases = async (): Promise<RecentTransaction[]> => {
   const snap = await getDocs(q);
 
   const recentPurchases: RecentTransaction[] = [];
-  for (const doc of snap.docs) {
-    const data = doc.data() as Pembelian;
+  for (const purchaseDoc of snap.docs) {
+    const data = purchaseDoc.data() as Pembelian;
+    console.log(
+      "Purchase data createdAt:",
+      data.createdAt,
+      typeof data.createdAt,
+    );
     let supplierName = "Unknown";
 
     if (data.supplierId) {
       try {
-        const supplierDoc = await getDocs(
-          query(
-            collection(db, "suppliers"),
-            where("id", "==", data.supplierId),
-          ),
-        );
-        if (!supplierDoc.empty) {
-          const supplierData = supplierDoc.docs[0].data() as Supplier;
+        const supplierDoc = await getDoc(doc(db, "suppliers", data.supplierId));
+        if (supplierDoc.exists()) {
+          const supplierData = supplierDoc.data() as Supplier;
           supplierName = supplierData.nama;
         }
       } catch (error) {
@@ -245,10 +287,48 @@ const getRecentPurchases = async (): Promise<RecentTransaction[]> => {
       }
     }
 
+    let parsedDate: Date;
+    try {
+      if (
+        data.createdAt &&
+        typeof data.createdAt === "object" &&
+        !Array.isArray(data.createdAt) &&
+        Object.keys(data.createdAt).length === 0
+      ) {
+        // Handle empty object case
+        console.warn(
+          "Empty object found for createdAt in purchase:",
+          data.createdAt,
+        );
+        parsedDate = new Date();
+      } else if (data.createdAt) {
+        if (typeof data.createdAt.toDate === "function") {
+          parsedDate = data.createdAt.toDate();
+        } else if (data.createdAt instanceof Date) {
+          parsedDate = data.createdAt;
+        } else {
+          parsedDate = new Date(data.createdAt);
+        }
+      } else {
+        parsedDate = new Date();
+      }
+
+      // Validate the parsed date
+      if (isNaN(parsedDate.getTime())) {
+        console.warn("Invalid date parsed for purchase, using current date");
+        parsedDate = new Date();
+      }
+
+      console.log("Parsed purchase date:", parsedDate);
+    } catch (error) {
+      console.error("Date parsing error for purchase:", error);
+      parsedDate = new Date();
+    }
+
     recentPurchases.push({
-      id: doc.id,
-      kode: data.invoice || `PB-${doc.id.slice(-6)}`,
-      tanggal: data.createdAt || new Date(),
+      id: purchaseDoc.id,
+      kode: data.invoice || `PB-${purchaseDoc.id.slice(-6)}`,
+      tanggal: parsedDate,
       total: data.total || 0,
       status: data.status || "Belum Lunas",
       supplier: supplierName,

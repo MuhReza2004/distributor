@@ -102,3 +102,14 @@ export const getPembelianDetails = async (
     ...doc.data(),
   })) as PembelianDetail[];
 };
+
+export const updatePembelianStatus = async (
+  pembelianId: string,
+  status: string,
+) => {
+  const pembelianRef = doc(db, "pembelian", pembelianId);
+  await updateDoc(pembelianRef, {
+    status: status,
+    updatedAt: new Date(),
+  });
+};

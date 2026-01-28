@@ -14,6 +14,7 @@ export interface Produk {
   nama: string;
   kategori: string;
   satuan: string;
+  stok: number;
   status: ProdukStatus;
   createdAt?: Date;
   updatedAt?: Date;

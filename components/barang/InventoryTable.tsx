@@ -54,7 +54,8 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
         </TableHeader>
         <TableBody>
           {inventoryData.map((item) => {
-            const stokAwal = item.stok - item.totalMasuk + item.totalKeluar;
+            const currentStok = item.stok || 0;
+            const stokAwal = currentStok - item.totalMasuk + item.totalKeluar;
             return (
               <TableRow key={item.id} className="border-b hover:bg-gray-50">
                 <TableCell className="font-medium">{item.nama}</TableCell>
@@ -66,7 +67,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                   -{item.totalKeluar}
                 </TableCell>
                 <TableCell className="text-right font-semibold">
-                  {item.stok}
+                  {currentStok}
                 </TableCell>
               </TableRow>
             );

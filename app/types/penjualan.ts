@@ -20,8 +20,8 @@ export interface Penjualan {
   noSuratJalan: string;
   total: number;
   status: "Lunas" | "Belum Lunas";
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: Date | any;
+  updatedAt?: Date | any;
   items?: PenjualanDetail[]; // populated from penjualan_detail
 
   // Additional fields for detailed view
