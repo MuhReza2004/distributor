@@ -1,14 +1,26 @@
-# TODO: Change Supplier Collection Structure
+# Dashboard Enhancement Tasks
 
-## Overview
+## 1. Create Dashboard Summary Components
 
-Change the supplier collection to store supplier name, product IDs (referencing produk collection), and address. Display product names in forms and table by fetching from produk collection.
+- [x] Create `components/dashboard/SummaryCards.tsx` for key metrics (total products, customers, suppliers, sales, purchases, revenue, expenses)
+- [x] Create `components/dashboard/LowStockAlerts.tsx` for inventory alerts
+- [x] Create `components/dashboard/RecentTransactions.tsx` for recent sales and purchases
 
-## Steps
+## 2. Update Admin Dashboard Page
 
-- [x] Update types/suplyer.ts: Change SupplierFormData to use productIds: string[] instead of products: SupplierProduct[]. Adjust SupplierProduct if needed.
-- [x] Update app/services/supplyer.service.ts: Modify CRUD functions to store/fetch productIds. Add join in getAllSuppliers to fetch product names from produk collection.
-- [x] Update components/suplyer/DialogTambahSuplyer.tsx: Fetch all products, use select dropdown for product selection by name, store IDs.
-- [x] Update components/suplyer/EditSupplierDialog.tsx: Similarly, use select dropdown for products.
-- [x] Update components/suplyer/TabelSuplyer.tsx: Display product names by fetching via IDs.
-- [ ] Test the changes: Ensure forms and table work correctly with new structure.
+- [x] Modify `app/dashboard/admin/page.tsx` to include all summary components
+- [x] Add data fetching hooks for all metrics
+- [x] Implement responsive grid layout for cards
+
+## 3. Add Data Services for Dashboard
+
+- [x] Create `app/services/dashboard.service.ts` for aggregated data fetching
+- [x] Add functions to get total counts, sums, and recent data
+
+## 4. Testing and Refinement
+
+- [x] Test data loading and error handling
+- [x] Ensure responsive design
+- [x] Add loading states and empty states
+- [x] Fix date sorting error in RecentTransactions
+- [x] Fix supplier collection name issue
