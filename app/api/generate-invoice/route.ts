@@ -424,15 +424,23 @@ async function generatePdf(
         font-weight: 600;
       }
 
-      /* Summary Section */
+      /* Summary and Footer Section */
+      .summary-footer-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-top: 20px;
+        gap: 30px;
+      }
+
       .summary-container {
         display: flex;
         justify-content: flex-end;
-        margin-top: 20px;
+        flex: 1;
       }
 
       .summary-table {
-        width: 350px;
+        width: 200px;
       }
 
       .summary-table table {
@@ -464,10 +472,11 @@ async function generatePdf(
 
       /* Footer Section */
       .footer-notes {
-        margin-top: 30px;
         padding: 15px;
         background: #f8f9fa;
         border-radius: 5px;
+        width: 300px;
+        flex-shrink: 0;
       }
 
       .footer-notes p {
@@ -485,7 +494,6 @@ async function generatePdf(
       .signature-section {
         display: flex;
         justify-content: space-between;
-        margin-top: 50px;
         padding-top: 20px;
       }
 
@@ -665,87 +673,88 @@ async function generatePdf(
         <p><strong>Terbilang:</strong> <em>${numberToWords(Math.floor(totalAkhir))}</em></p>
       </div>
 
-      <!-- SUMMARY -->
-      <div class="summary-container">
-        <div class="summary-table">
-          <table>
-            <tr>
-              <td>Subtotal</td>
-              <td class="text-right">Rp ${(() => {
-                const subTotal = (penjualan.items || []).reduce(
-                  (sum, item) => sum + item.subtotal,
-                  0,
-                );
-                return subTotal.toLocaleString("id-ID");
-              })()}</td>
-            </tr>
-            ${
-              penjualan.diskon && penjualan.diskon > 0
-                ? (() => {
-                    const subTotal = (penjualan.items || []).reduce(
-                      (sum, item) => sum + item.subtotal,
-                      0,
-                    );
-                    const diskonAmount = (subTotal * penjualan.diskon) / 100;
-                    return `
-              <tr>
-                <td>Diskon (${penjualan.diskon}%)</td>
-                <td class="text-right">- Rp ${diskonAmount.toLocaleString("id-ID")}</td>
-              </tr>
-            `;
-                  })()
-                : ""
-            }
-            ${
-              penjualan.pajakEnabled
-                ? (() => {
-                    const subTotal = (penjualan.items || []).reduce(
-                      (sum, item) => sum + item.subtotal,
-                      0,
-                    );
-                    const diskonAmount = penjualan.diskon
-                      ? (subTotal * penjualan.diskon) / 100
-                      : 0;
-                    const totalSetelahDiskon = subTotal - diskonAmount;
-                    const pajakAmount = totalSetelahDiskon * 0.11;
-                    return pajakAmount > 0
-                      ? `
-              <tr>
-                <td>PPN 11%</td>
-                <td class="text-right">Rp ${pajakAmount.toLocaleString("id-ID")}</td>
-              </tr>
-            `
-                      : "";
-                  })()
-                : ""
-            }
-            <tr>
-              <td><strong>TOTAL</strong></td>
-              <td class="text-right"><strong>Rp ${(() => {
-                const subTotal = (penjualan.items || []).reduce(
-                  (sum, item) => sum + item.subtotal,
-                  0,
-                );
-                const diskonAmount = penjualan.diskon
-                  ? (subTotal * penjualan.diskon) / 100
-                  : 0;
-                const totalSetelahDiskon = subTotal - diskonAmount;
-                const pajakAmount = penjualan.pajakEnabled
-                  ? totalSetelahDiskon * 0.11
-                  : 0;
-                const totalAkhir = totalSetelahDiskon + pajakAmount;
-                return totalAkhir.toLocaleString("id-ID");
-              })()}</strong></td>
-            </tr>
-          </table>
+      <!-- SUMMARY AND FOOTER -->
+      <div class="summary-footer-container">
+        <div class="footer-notes">
+          <p><strong>Terima kasih atas kepercayaan Anda.</strong></p>
+          <p>Mohon simpan dokumen ini sebagai bukti transaksi yang sah.</p>
+          <p style="font-style: italic; margin-top: 8px;">Dokumen ini dibuat secara elektronik dan sah tanpa tanda tangan basah.</p>
         </div>
-      </div>
 
-      <!-- FOOTER NOTES -->
-      <div class="footer-notes">
-        <p><strong>Terima kasih atas kepercayaan Anda.</strong></p>
-        <p>Mohon simpan dokumen ini sebagai bukti transaksi yang sah.</p>
-        <p style="font-style: italic; margin-top: 8px;">Dokumen ini dibuat secara elektronik dan sah tanpa tanda tangan basah.</p>
+        <div class="summary-container">
+          <div class="summary-table">
+            <table>
+              <tr>
+                <td>Subtotal</td>
+                <td class="text-right">Rp ${(() => {
+                  const subTotal = (penjualan.items || []).reduce(
+                    (sum, item) => sum + item.subtotal,
+                    0,
+                  );
+                  return subTotal.toLocaleString("id-ID");
+                })()}</td>
+              </tr>
+              ${
+                penjualan.diskon && penjualan.diskon > 0
+                  ? (() => {
+                      const subTotal = (penjualan.items || []).reduce(
+                        (sum, item) => sum + item.subtotal,
+                        0,
+                      );
+                      const diskonAmount = (subTotal * penjualan.diskon) / 100;
+                      return `
+                <tr>
+                  <td>Diskon (${penjualan.diskon}%)</td>
+                  <td class="text-right">- Rp ${diskonAmount.toLocaleString("id-ID")}</td>
+                </tr>
+              `;
+                    })()
+                  : ""
+              }
+              ${
+                penjualan.pajakEnabled
+                  ? (() => {
+                      const subTotal = (penjualan.items || []).reduce(
+                        (sum, item) => sum + item.subtotal,
+                        0,
+                      );
+                      const diskonAmount = penjualan.diskon
+                        ? (subTotal * penjualan.diskon) / 100
+                        : 0;
+                      const totalSetelahDiskon = subTotal - diskonAmount;
+                      const pajakAmount = totalSetelahDiskon * 0.11;
+                      return pajakAmount > 0
+                        ? `
+                <tr>
+                  <td>PPN 11%</td>
+                  <td class="text-right">Rp ${pajakAmount.toLocaleString("id-ID")}</td>
+                </tr>
+              `
+                        : "";
+                    })()
+                  : ""
+              }
+              <tr>
+                <td><strong>TOTAL</strong></td>
+                <td class="text-right"><strong>Rp ${(() => {
+                  const subTotal = (penjualan.items || []).reduce(
+                    (sum, item) => sum + item.subtotal,
+                    0,
+                  );
+                  const diskonAmount = penjualan.diskon
+                    ? (subTotal * penjualan.diskon) / 100
+                    : 0;
+                  const totalSetelahDiskon = subTotal - diskonAmount;
+                  const pajakAmount = penjualan.pajakEnabled
+                    ? totalSetelahDiskon * 0.11
+                    : 0;
+                  const totalAkhir = totalSetelahDiskon + pajakAmount;
+                  return totalAkhir.toLocaleString("id-ID");
+                })()}</strong></td>
+              </tr>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- SIGNATURE -->
