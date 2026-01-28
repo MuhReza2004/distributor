@@ -62,13 +62,20 @@ export default function DialogTambahHargaProduk({
       ]);
       setSuppliers(sups);
       setProducts(prods);
+
+      // Reset form data when dialog opens
+      setFormData({
+        supplierId: preselectedSupplierId || "",
+        produkId: "",
+        hargaBeli: 0,
+        hargaJual: 0,
+        stok: 0,
+      });
+      setDisplayPrice("");
+      setDisplaySellPrice("");
     };
     if (open) {
       fetchData();
-      // Pre-select supplier if provided
-      if (preselectedSupplierId) {
-        setFormData((prev) => ({ ...prev, supplierId: preselectedSupplierId }));
-      }
     }
   }, [open, preselectedSupplierId]);
 
