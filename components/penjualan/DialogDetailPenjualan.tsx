@@ -76,7 +76,10 @@ export const DialogDetailPenjualan: React.FC<DialogDetailPenjualanProps> = ({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(penjualan),
+        body: JSON.stringify({
+          ...penjualan,
+          namaToko: pelanggan?.namaToko,
+        }),
       });
 
       if (!response.ok) {

@@ -92,16 +92,11 @@ function numberToWords(num: number): string {
   return result.trim() + " rupiah";
 }
 
-async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
-  // Fetch customer data to get store name
-  let customerData = null;
-  if (penjualan.pelangganId) {
-    try {
-      customerData = await getPelangganById(penjualan.pelangganId);
-    } catch (error) {
-      console.error("Error fetching customer data:", error);
-    }
-  }
+async function generatePdf(
+  penjualan: Penjualan & { namaToko?: string },
+): Promise<Uint8Array> {
+  // The customer store name ('namaToko') is now passed directly in the 'penjualan' object.
+
 
   // Calculate total amount for terbilang
   const subTotal = (penjualan.items || []).reduce(
@@ -608,7 +603,7 @@ async function generatePdf(penjualan: Penjualan): Promise<Uint8Array> {
           </div>
           <div class="customer-item">
             <span class="label">Toko</span>
-            <span class="value">${customerData?.namaToko || "-"}</span>
+            <span class="value">${penjualan.namaToko || "-"}</span>
           </div>
           <div class="customer-item">
             <span class="label">Status</span>
