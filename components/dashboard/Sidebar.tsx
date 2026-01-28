@@ -89,7 +89,7 @@ export default function Sidebar() {
           src="/logo.svg"
           alt="Logo"
           width={130}
-          height={130}
+          height={135}
           className="object-contain"
         />
       </div>
@@ -111,12 +111,12 @@ export default function Sidebar() {
                 <div key={menu.label}>
                   <button
                     onClick={() => handleMenuClick(menu.href)}
-                    className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium text-left hover:bg-gray-100 rounded-md"
+                    className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium text-left bg-[#ffd9a1] rounded-md"
                   >
                     <span
                       className={
                         pathname.startsWith(menu.href)
-                          ? "text-blue-600"
+                          ? "text-black "
                           : "bg-blue-600text-gray-700"
                       }
                     >

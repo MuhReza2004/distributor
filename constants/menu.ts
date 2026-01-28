@@ -9,35 +9,42 @@ export interface MenuItem {
 
 export const dashboardMenus: MenuItem[] = [
   // ADMIN
+  // {
+  //   label: "Dashboard",
+  //   href: "/dashboard/admin",
+  //   roles: ["admin"],
+  // },
   {
-    label: "Dashboard",
-    href: "/dashboard/admin",
+    label: "Master Menu",
+    href: "/dashboard/admin/transaksi",
     roles: ["admin"],
-  },
-  {
-    label: "Produk",
-    href: "/dashboard/admin/produk",
-    roles: ["admin"],
-  },
-  {
-    label: "Supplier",
-    href: "/dashboard/admin/supplyer",
-    roles: ["admin"],
-  },
-  {
-    label: "Harga Produk",
-    href: "/dashboard/admin/HargaProduk",
-    roles: ["admin"],
-  },
-  {
-    label: "Pelanggan",
-    href: "/dashboard/admin/pelanggan",
-    roles: ["admin"],
-  },
-  {
-    label: "Inventory/stok",
-    href: "/dashboard/admin/inventory",
-    roles: ["admin"],
+    children: [
+      {
+        label: "Produk",
+        href: "/dashboard/admin/produk",
+        roles: ["admin"],
+      },
+      {
+        label: "Supplier",
+        href: "/dashboard/admin/supplyer",
+        roles: ["admin"],
+      },
+      {
+        label: "Harga Produk",
+        href: "/dashboard/admin/HargaProduk",
+        roles: ["admin"],
+      },
+      {
+        label: "Pelanggan",
+        href: "/dashboard/admin/pelanggan",
+        roles: ["admin"],
+      },
+      {
+        label: "Inventory/stok",
+        href: "/dashboard/admin/inventory",
+        roles: ["admin"],
+      },
+    ],
   },
   {
     label: "Transaksi",
@@ -45,7 +52,7 @@ export const dashboardMenus: MenuItem[] = [
     roles: ["admin"],
     children: [
       {
-        label: "Order Barang",
+        label: "Pembelian",
         href: "/dashboard/admin/transaksi/pembelian",
         roles: ["admin"],
       },
