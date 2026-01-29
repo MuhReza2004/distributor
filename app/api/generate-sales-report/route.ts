@@ -130,8 +130,8 @@ export async function POST(request: NextRequest) {
       0,
     );
     const totalPajak = filteredSales.reduce(
-        (sum, sale) => sum + (sale.pajak || 0),
-        0,
+      (sum, sale) => sum + (sale.pajak || 0),
+      0,
     );
     const penjualanBersih = totalRevenue - totalPajak;
     const paidSales = filteredSales.filter(
@@ -165,19 +165,19 @@ export async function POST(request: NextRequest) {
             .container {
               width: 100%;
               background: white;
+              padding: 0 30px;
             }
 
             .report-title {
               text-align: center;
-              padding: 25px 30px 20px;
-              background: linear-gradient(to bottom, #f8fafc, transparent);
+              padding: 25px 0 20px;
               border-bottom: 3px solid #147146;
               margin-bottom: 25px;
             }
 
             .report-title h2 {
-              margin: 0 0 8px 0;
-              font-size: 22px;
+              margin: 0 0 10px 0;
+              font-size: 20px;
               color: #147146;
               font-weight: 700;
               letter-spacing: 1px;
@@ -190,70 +190,48 @@ export async function POST(request: NextRequest) {
               color: white;
               padding: 6px 16px;
               border-radius: 20px;
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 500;
               margin-top: 5px;
             }
 
-            .summary {
-              display: grid;
-              grid-template-columns: repeat(3, 1fr);
-              gap: 15px;
-              padding: 0 30px;
-              margin-bottom: 30px;
+            .summary-legend {
+                padding: 15px 20px;
+                margin-bottom: 25px;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                background-color: #f9fafb;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px 25px;
             }
-
-            .summary-card {
-              background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-              border: 2px solid #e5e7eb;
-              border-radius: 10px;
-              padding: 18px 15px;
-              text-align: center;
-              transition: transform 0.2s;
-              position: relative;
-              overflow: hidden;
+            
+            .summary-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 10px;
+                padding: 8px 0;
+                border-bottom: 1px solid #e5e7eb;
             }
-
-            .summary-card::before {
-              content: '';
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              height: 4px;
-              background: linear-gradient(90deg, #147146, #0f5a36);
+            
+            .summary-item:last-child, 
+            .summary-item:nth-last-child(2), 
+            .summary-item:nth-last-child(3) {
+                border-bottom: none;
             }
-            .summary-card.revenue::before { background: linear-gradient(90deg, #2563eb, #1d4ed8); }
-            .summary-card.paid::before { background: linear-gradient(90deg, #16a34a, #15803d); }
-            .summary-card.unpaid::before { background: linear-gradient(90deg, #dc2626, #b91c1c); }
-
-            .summary-card .icon {
-              font-size: 24px;
-              margin-bottom: 8px;
-              opacity: 0.8;
+            
+            .summary-item-label {
+                color: #4b5563;
+                font-weight: 600;
             }
-
-            .summary-card h3 {
-              margin: 0 0 10px 0;
-              font-size: 11px;
-              color: #6b7280;
-              font-weight: 600;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
+            
+            .summary-item-value {
+                font-weight: 700;
+                color: #1f2937;
             }
-
-            .summary-card p {
-              margin: 0;
-              font-size: 20px;
-              font-weight: 700;
-              color: #147146;
-            }
-            .summary-card.revenue p { color: #2563eb; font-size: 16px; }
-            .summary-card.paid p { color: #16a34a; }
-            .summary-card.unpaid p { color: #dc2626; }
 
             .table-container {
-              padding: 0 30px 30px;
               overflow-x: auto;
             }
 
@@ -261,69 +239,72 @@ export async function POST(request: NextRequest) {
               width: 100%;
               border-collapse: separate;
               border-spacing: 0;
-              font-size: 10px;
-              background: white;
-              border-radius: 10px;
+              font-size: 9px;
+              border: 1px solid #e5e7eb;
+              border-radius: 8px;
               overflow: hidden;
-              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             }
 
             thead tr {
-              background: linear-gradient(135deg, #147146 0%, #0f5a36 100%);
+              background: #147146;
               color: white;
             }
 
             th {
-              padding: 12px 10px;
+              padding: 10px 8px;
               text-align: left;
               font-weight: 600;
-              font-size: 10px;
+              font-size: 9px;
               text-transform: uppercase;
-              letter-spacing: 0.5px;
-              border: none;
+              letter-spacing: 0.3px;
             }
 
             td {
-              padding: 10px;
+              padding: 8px;
               border-bottom: 1px solid #f3f4f6;
               vertical-align: top;
             }
 
-            tbody tr {
-              transition: background-color 0.2s;
+            tbody tr:last-child td {
+              border-bottom: none;
             }
-            tbody tr:hover { background-color: #f9fafb; }
-            tbody tr:last-child td { border-bottom: none; }
-            tbody tr:nth-child(even) { background-color: #fafafa; }
 
+            tbody tr:nth-child(even) {
+              background-color: #fafafa;
+            }
+            
             .status-lunas {
-              background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+              background-color: #d1fae5;
               color: #065f46;
-              padding: 4px 10px;
-              border-radius: 6px;
-              font-size: 9px;
+              padding: 3px 8px;
+              border-radius: 4px;
+              font-size: 8px;
               font-weight: 700;
               display: inline-block;
               text-transform: uppercase;
               letter-spacing: 0.3px;
-              box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
             }
 
             .status-belum-lunas {
-              background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+              background-color: #fee2e2;
               color: #7f1d1d;
-              padding: 4px 10px;
-              border-radius: 6px;
-              font-size: 9px;
+              padding: 3px 8px;
+              border-radius: 4px;
+              font-size: 8px;
               font-weight: 700;
               display: inline-block;
               text-transform: uppercase;
               letter-spacing: 0.3px;
-              box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
             }
 
-            .text-right { text-align: right; font-weight: 600; }
-            .text-center { text-align: center; }
+            .text-right { 
+              text-align: right; 
+              font-weight: 600; 
+            }
+            
+            .text-center { 
+              text-align: center; 
+            }
 
             .products-list {
               margin: 0;
@@ -332,18 +313,61 @@ export async function POST(request: NextRequest) {
             }
 
             .products-list li {
-              margin-bottom: 4px;
-              font-size: 9px;
-              padding-left: 12px;
-              position: relative;
+              margin-bottom: 3px;
+              font-size: 8px;
               line-height: 1.4;
             }
-            .products-list li::before {
-              content: '•';
-              color: #147146;
-              font-weight: bold;
-              position: absolute;
-              left: 0;
+            
+            .totals-summary {
+                float: right;
+                width: 280px;
+                margin-top: 15px;
+                page-break-inside: avoid;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            .total-item {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 12px;
+                font-size: 10px;
+            }
+            .total-item-label {
+                color: #4b5563;
+                font-weight: 600;
+            }
+            .total-item-value {
+                font-weight: 700;
+                color: #1f2937;
+            }
+            .grand-total {
+                background-color: #147146;
+                color: white;
+            }
+            .grand-total .total-item-label, .grand-total .total-item-value {
+                color: white;
+                font-size: 12px;
+            }
+
+            .signature-section {
+                margin-top: 50px;
+                page-break-inside: avoid;
+                float: right;
+                clear: both;
+                text-align: center;
+            }
+            
+            .signature-line {
+                border-top: 1px solid #1f2937;
+                width: 200px;
+                margin-top: 60px;
+            }
+            
+            .signature-name {
+                font-weight: 600;
+                font-size: 10px;
+                margin-top: 5px;
             }
           </style>
         </head>
@@ -356,37 +380,31 @@ export async function POST(request: NextRequest) {
               </span>
             </div>
 
-            <div class="summary">
-              <div class="summary-card">
-                <div class="icon">📊</div>
-                <h3>Total Penjualan</h3>
-                <p>${totalSales}</p>
-              </div>
-              <div class="summary-card revenue">
-                <div class="icon">💰</div>
-                <h3>Pendapatan Bruto</h3>
-                <p>${formatRupiah(totalRevenue)}</p>
-              </div>
-              <div class="summary-card">
-                <div class="icon">🧾</div>
-                <h3>Total Pajak (PPN)</h3>
-                <p>${formatRupiah(totalPajak)}</p>
-              </div>
-              <div class="summary-card">
-                <div class="icon">💼</div>
-                <h3>Pendapatan Netto</h3>
-                <p>${formatRupiah(penjualanBersih)}</p>
-              </div>
-              <div class="summary-card paid">
-                <div class="icon">✅</div>
-                <h3>Penjualan Lunas</h3>
-                <p>${paidSales}</p>
-              </div>
-              <div class="summary-card unpaid">
-                <div class="icon">⏳</div>
-                <h3>Belum Lunas</h3>
-                <p>${unpaidSales}</p>
-              </div>
+            <div class="summary-legend">
+                <div class="summary-item">
+                    <span class="summary-item-label">Total Penjualan</span>
+                    <span class="summary-item-value">${totalSales}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-item-label">Pendapatan Bruto</span>
+                    <span class="summary-item-value">${formatRupiah(totalRevenue)}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-item-label">Total Pajak (PPN)</span>
+                    <span class="summary-item-value">${formatRupiah(totalPajak)}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-item-label">Pendapatan Netto</span>
+                    <span class="summary-item-value">${formatRupiah(penjualanBersih)}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-item-label">Penjualan Lunas</span>
+                    <span class="summary-item-value">${paidSales}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-item-label">Belum Lunas</span>
+                    <span class="summary-item-value">${unpaidSales}</span>
+                </div>
             </div>
 
             <div class="table-container">
@@ -409,12 +427,12 @@ export async function POST(request: NextRequest) {
                     .map(
                       (sale, index) => `
                     <tr>
-                      <td class="no-column">${index + 1}</td>
-                      <td class="invoice-column">${sale.noInvoice}</td>
+                      <td class="text-center">${index + 1}</td>
+                      <td style="font-weight: 600; color: #147146;">${sale.noInvoice}</td>
                       <td>${sale.noSuratJalan}</td>
                       <td>${new Date(sale.tanggal).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
                       <td><strong>${sale.namaPelanggan || "Pelanggan Tidak Diketahui"}</strong></td>
-                      <td style="font-size: 9px; color: #6b7280;">${sale.alamatPelanggan || "-"}</td>
+                      <td style="font-size: 8px; color: #6b7280;">${sale.alamatPelanggan || "-"}</td>
                       <td>
                         ${
                           sale.items && sale.items.length > 0
@@ -427,7 +445,7 @@ export async function POST(request: NextRequest) {
                             : "<small style='color: #9ca3af;'>Tidak ada item</small>"
                         }
                       </td>
-                      <td class="text-right"><strong style="color: #147146; font-size: 11px;">${formatRupiah(sale.total)}</strong></td>
+                      <td class="text-right"><strong style="color: #147146; font-size: 10px;">${formatRupiah(sale.total)}</strong></td>
                       <td class="text-center">
                         <span class="${sale.status === "Lunas" ? "status-lunas" : "status-belum-lunas"}">
                           ${sale.status}
@@ -439,6 +457,27 @@ export async function POST(request: NextRequest) {
                     .join("")}
                 </tbody>
               </table>
+            </div>
+            
+            <div class="totals-summary">
+                <div class="total-item">
+                    <span class="total-item-label">Subtotal:</span>
+                    <span class="total-item-value">${formatRupiah(penjualanBersih)}</span>
+                </div>
+                <div class="total-item">
+                    <span class="total-item-label">Total Pajak:</span>
+                    <span class="total-item-value">${formatRupiah(totalPajak)}</span>
+                </div>
+                <div class="total-item grand-total">
+                    <span class="total-item-label">Total Akhir:</span>
+                    <span class="total-item-value">${formatRupiah(totalRevenue)}</span>
+                </div>
+            </div>
+
+            <div class="signature-section">
+                <div style="font-size: 10px; margin-bottom: 5px;">Mengetahui,</div>
+                <div class="signature-line"></div>
+                <div class="signature-name">PT. Sumber Alam Pasangkayu</div>
             </div>
           </div>
         </body>
@@ -463,25 +502,28 @@ export async function POST(request: NextRequest) {
       <div style="
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 20px;
-        height: 100px;
+        padding: 20px 30px;
         background-image: url('${gradientBg}');
         background-size: cover;
-        -webkit-print-color-adjust: exact; /* Force background rendering */
+        -webkit-print-color-adjust: exact;
         color: white;
       ">
-        <div style="display: flex; align-items: center; gap: 15px;">
-          <img src="${logoSrc}" style="height: 50px; width: 50px;" />
-          <div>
-            <h1 style="font-size: 18px; color: white; margin: 0; font-weight: 700;">Sumber Alam Pasangkayu</h1>
-            <p style="margin: 3px 0 0 0; font-size: 10px; color: white;">Laporan Penjualan</p>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 20px;">
+            <img src="${logoSrc}" style="height: 55px; width: 55px; background: white; border-radius: 8px; padding: 6px;" />
+            <div>
+              <h1 style="font-size: 18px; color: white; margin: 0 0 10px 0; font-weight: 700; letter-spacing: 0.5px;">Sumber Alam Pasangkayu</h1>
+              <div style="font-size: 9px; line-height: 1.7; color: white; opacity: 0.95;">
+                <div><strong style="display: inline-block; width: 45px;">Alamat</strong> : Jl. Soekarno Hatta Pasangkayu</div>
+                <div><strong style="display: inline-block; width: 45px;">Kontak</strong> : 0821-9030-9333</div>
+                <div><strong style="display: inline-block; width: 45px;">Email</strong> : sumberalampasangkayu@gmail.com</div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div style="font-size: 10px; color: white;">
-          Tanggal Cetak: ${new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+          <div style="text-align: right; font-size: 9px; color: white; opacity: 0.9;">
+            <div style="margin-bottom: 4px; font-weight: 500;">Tanggal Cetak:</div>
+            <div style="font-weight: 600; font-size: 10px;">${new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</div>
+          </div>
         </div>
       </div>
     `;
@@ -491,11 +533,12 @@ export async function POST(request: NextRequest) {
         font-family: 'Segoe UI', sans-serif;
         width: 100%;
         text-align: center;
-        padding: 0 20px;
-        font-size: 9px;
+        padding: 5px 20px;
+        font-size: 8px;
         color: #6b7280;
+        border-top: 1px solid #e5e7eb;
       ">
-        <span class="pageNumber"></span> / <span class="totalPages"></span>
+        Halaman <span class="pageNumber"></span> dari <span class="totalPages"></span>
       </div>
     `;
 
@@ -517,7 +560,7 @@ export async function POST(request: NextRequest) {
       format: "A4",
       printBackground: true,
       margin: {
-        top: "120px",
+        top: "150px",
         right: "20px",
         bottom: "50px",
         left: "20px",
