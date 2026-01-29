@@ -5,6 +5,8 @@ export interface PembelianDetail {
   qty: number;
   harga: number;
   subtotal: number;
+  namaProduk?: string; // Added for product name
+  satuan?: string; // Added for product unit
 }
 
 export interface Pembelian {
@@ -19,4 +21,5 @@ export interface Pembelian {
   createdAt?: Date | any;
   updatedAt?: Date | any;
   items?: PembelianDetail[]; // populated from pembelian_detail
+  namaSupplier?: string; // Added for supplier name
 }

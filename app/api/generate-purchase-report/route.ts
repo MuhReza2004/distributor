@@ -4,52 +4,44 @@ import { formatRupiah } from "@/helper/format";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { adminDb } from "@/lib/firebase-admin";
-import { Penjualan, PenjualanDetail } from "@/app/types/penjualan";
+import { Pembelian, PembelianDetail } from "@/app/types/pembelian";
 
 // This function is for server-side use with admin privileges
-const getAllPenjualanAdmin = async (): Promise<Penjualan[]> => {
-  const q = adminDb.collection("penjualan").orderBy("createdAt", "desc");
+const getAllPembelianAdmin = async (): Promise<Pembelian[]> => {
+  const q = adminDb.collection("pembelian").orderBy("createdAt", "desc");
   const snap = await q.get();
 
-  const penjualanList: Penjualan[] = [];
+  const pembelianList: Pembelian[] = [];
 
   for (const docSnap of snap.docs) {
-    const penjualanData = docSnap.data() as Penjualan;
-    const penjualanId = docSnap.id;
+    const pembelianData = docSnap.data() as Pembelian;
+    const pembelianId = docSnap.id;
 
-    // Fetch pelanggan name
-    let pelangganData = null;
-    try {
-      if (penjualanData.pelangganId) {
-        const pelangganDoc = await adminDb
-          .collection("pelanggan")
-          .doc(penjualanData.pelangganId)
+    // Fetch supplier name
+    let supplierData = null;
+    if (pembelianData.supplierId) {
+      try {
+        const supplierDoc = await adminDb
+          .collection("suppliers")
+          .doc(pembelianData.supplierId)
           .get();
-        if (pelangganDoc.exists) {
-          pelangganData = pelangganDoc.data();
+        if (supplierDoc.exists) {
+          supplierData = supplierDoc.data();
         }
-      }
-    } catch (e) {
-      console.error(
-        `Could not fetch customer by doc ID: ${penjualanData.pelangganId}`,
-        e,
-      );
-      // Fallback: search by idPelanggan field if doc id fails
-      const pelangganQuery = adminDb
-        .collection("pelanggan")
-        .where("idPelanggan", "==", penjualanData.pelangganId);
-      const pelangganSnap = await pelangganQuery.get();
-      if (!pelangganSnap.empty) {
-        pelangganData = pelangganSnap.docs[0].data();
+      } catch (e) {
+        console.error(
+          `Could not fetch supplier: ${pembelianData.supplierId}`,
+          e,
+        );
       }
     }
 
     // Fetch details
     const detailQuery = adminDb
-      .collection("penjualan_detail")
-      .where("penjualanId", "==", penjualanId);
+      .collection("pembelian_detail")
+      .where("pembelianId", "==", pembelianId);
     const detailSnap = await detailQuery.get();
-    const details: PenjualanDetail[] = [];
+    const details: PembelianDetail[] = [];
 
     for (const detailDoc of detailSnap.docs) {
       const detailData = detailDoc.data();
@@ -58,96 +50,76 @@ const getAllPenjualanAdmin = async (): Promise<Penjualan[]> => {
         .doc(detailData.supplierProdukId)
         .get();
       const supplierProdukData = supplierProdukDoc.data();
-
       if (supplierProdukData) {
         const produkDoc = await adminDb
           .collection("produk")
           .doc(supplierProdukData.produkId)
           .get();
         const produkData = produkDoc.data();
-
         details.push({
           id: detailDoc.id,
           ...detailData,
           namaProduk: produkData?.nama || "Produk Tidak Ditemukan",
           satuan: produkData?.satuan || "",
-          hargaJual: supplierProdukData.hargaJual || detailData.harga,
-        } as PenjualanDetail);
+        } as PembelianDetail);
       } else {
         details.push({
           id: detailDoc.id,
           ...detailData,
           namaProduk: "Produk Tidak Ditemukan",
-          satuan: "",
-          hargaJual: detailData.harga,
-        } as PenjualanDetail);
+        } as PembelianDetail);
       }
     }
 
-    penjualanList.push({
-      id: penjualanId,
-      ...penjualanData,
-      namaPelanggan: pelangganData?.namaPelanggan || "Unknown",
-      alamatPelanggan: pelangganData?.alamat || "",
+    pembelianList.push({
+      id: pembelianId,
+      ...pembelianData,
+      namaSupplier: supplierData?.nama || "Supplier Tidak Diketahui",
       items: details,
-      pajak: penjualanData.pajak || 0,
     });
   }
 
-  return penjualanList;
+  return pembelianList;
 };
 
 export async function POST(request: NextRequest) {
   try {
     const { startDate, endDate } = await request.json();
 
-    // Read and encode the logo first
     const logoPath = path.join(process.cwd(), "public", "logo.svg");
     const logoBuffer = await fs.readFile(logoPath);
     const logoBase64 = logoBuffer.toString("base64");
     const logoSrc = `data:image/svg+xml;base64,${logoBase64}`;
 
-    // Fetch sales data using admin privileges
-    const allSales = await getAllPenjualanAdmin();
+    const allPurchases = await getAllPembelianAdmin();
 
-    // Filter data based on date range
-    let filteredSales = allSales;
+    let filteredPurchases = allPurchases;
     if (startDate) {
-      filteredSales = filteredSales.filter(
-        (sale) => new Date(sale.tanggal) >= new Date(startDate),
+      filteredPurchases = filteredPurchases.filter(
+        (p) => new Date(p.tanggal) >= new Date(startDate),
       );
     }
     if (endDate) {
-      filteredSales = filteredSales.filter(
-        (sale) => new Date(sale.tanggal) <= new Date(endDate),
+      filteredPurchases = filteredPurchases.filter(
+        (p) => new Date(p.tanggal) <= new Date(endDate),
       );
     }
 
-    // Calculate summary
-    const totalSales = filteredSales.length;
-    const totalRevenue = filteredSales.reduce(
-      (sum, sale) => sum + sale.total,
-      0,
-    );
-    const totalPajak = filteredSales.reduce(
-      (sum, sale) => sum + (sale.pajak || 0),
-      0,
-    );
-    const penjualanBersih = totalRevenue - totalPajak;
-    const paidSales = filteredSales.filter(
-      (sale) => sale.status === "Lunas",
+    const totalPurchases = filteredPurchases.length;
+    const totalCost = filteredPurchases.reduce((sum, p) => sum + p.total, 0);
+    const paidPurchases = filteredPurchases.filter(
+      (p) => p.status === "Pending",
     ).length;
-    const unpaidSales = filteredSales.filter(
-      (sale) => sale.status === "Belum Lunas",
+    const unpaidPurchases = filteredPurchases.filter(
+      (p) => p.status === "Completed",
     ).length;
 
-    // Generate HTML content for PDF
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="UTF-8">
-          <title>Laporan Penjualan</title>
+          <title>Laporan Pembelian</title>
           <style>
             * {
               box-sizing: border-box;
@@ -202,7 +174,7 @@ export async function POST(request: NextRequest) {
                 border-radius: 8px;
                 background-color: #f9fafb;
                 display: grid;
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(2, 1fr);
                 gap: 12px 25px;
             }
             
@@ -215,9 +187,7 @@ export async function POST(request: NextRequest) {
                 border-bottom: 1px solid #e5e7eb;
             }
             
-            .summary-item:last-child, 
-            .summary-item:nth-last-child(2), 
-            .summary-item:nth-last-child(3) {
+            .summary-item:nth-last-child(-n+2) {
                 border-bottom: none;
             }
             
@@ -233,6 +203,7 @@ export async function POST(request: NextRequest) {
 
             .table-container {
               overflow-x: auto;
+              margin-bottom: 30px;
             }
 
             table {
@@ -286,8 +257,8 @@ export async function POST(request: NextRequest) {
             }
 
             .status-belum-lunas {
-              background-color: #fee2e2;
-              color: #7f1d1d;
+              background-color: #3a763f;
+              color: #ffffff;
               padding: 3px 8px;
               border-radius: 4px;
               font-size: 8px;
@@ -317,7 +288,7 @@ export async function POST(request: NextRequest) {
               font-size: 8px;
               line-height: 1.4;
             }
-            
+
             .totals-summary {
                 float: right;
                 width: 280px;
@@ -327,24 +298,29 @@ export async function POST(request: NextRequest) {
                 border-radius: 8px;
                 overflow: hidden;
             }
+            
             .total-item {
                 display: flex;
                 justify-content: space-between;
                 padding: 8px 12px;
                 font-size: 10px;
             }
+            
             .total-item-label {
                 color: #4b5563;
                 font-weight: 600;
             }
+            
             .total-item-value {
                 font-weight: 700;
                 color: #1f2937;
             }
+            
             .grand-total {
                 background-color: #147146;
                 color: white;
             }
+            
             .grand-total .total-item-label, .grand-total .total-item-value {
                 color: white;
                 font-size: 12px;
@@ -374,7 +350,7 @@ export async function POST(request: NextRequest) {
         <body>
           <div class="container">
             <div class="report-title">
-              <h2>Laporan Penjualan</h2>
+              <h2>Laporan Pembelian</h2>
               <span class="period">
                 ${startDate && endDate ? new Date(startDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) + " - " + new Date(endDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : startDate ? "Dari: " + new Date(startDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : endDate ? "Sampai: " + new Date(endDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Semua Periode"}
               </span>
@@ -382,28 +358,20 @@ export async function POST(request: NextRequest) {
 
             <div class="summary-legend">
                 <div class="summary-item">
-                    <span class="summary-item-label">Total Penjualan</span>
-                    <span class="summary-item-value">${totalSales}</span>
+                    <span class="summary-item-label">Total Pembelian</span>
+                    <span class="summary-item-value">${totalPurchases}</span>
                 </div>
                 <div class="summary-item">
-                    <span class="summary-item-label">Pendapatan Bruto</span>
-                    <span class="summary-item-value">${formatRupiah(totalRevenue)}</span>
+                    <span class="summary-item-label">Total Belanja</span>
+                    <span class="summary-item-value">${formatRupiah(totalCost)}</span>
                 </div>
                 <div class="summary-item">
-                    <span class="summary-item-label">Total Pajak (PPN)</span>
-                    <span class="summary-item-value">${formatRupiah(totalPajak)}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-item-label">Pendapatan Netto</span>
-                    <span class="summary-item-value">${formatRupiah(penjualanBersih)}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-item-label">Penjualan Lunas</span>
-                    <span class="summary-item-value">${paidSales}</span>
+                    <span class="summary-item-label">Pembelian Lunas</span>
+                    <span class="summary-item-value">${paidPurchases}</span>
                 </div>
                 <div class="summary-item">
                     <span class="summary-item-label">Belum Lunas</span>
-                    <span class="summary-item-value">${unpaidSales}</span>
+                    <span class="summary-item-value">${unpaidPurchases}</span>
                 </div>
             </div>
 
@@ -413,42 +381,40 @@ export async function POST(request: NextRequest) {
                   <tr>
                     <th class="text-center">No</th>
                     <th>Invoice</th>
-                    <th>Surat Jalan</th>
+                    <th>No. DO</th>
                     <th>Tanggal</th>
-                    <th>Pelanggan</th>
-                    <th>Alamat</th>
+                    <th>Supplier</th>
                     <th>Produk Dibeli</th>
                     <th class="text-right">Total</th>
                     <th class="text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${filteredSales
+                  ${filteredPurchases
                     .map(
-                      (sale, index) => `
+                      (p, index) => `
                     <tr>
                       <td class="text-center">${index + 1}</td>
-                      <td style="font-weight: 600; color: #147146;">${sale.noInvoice}</td>
-                      <td>${sale.noSuratJalan}</td>
-                      <td>${new Date(sale.tanggal).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
-                      <td><strong>${sale.namaPelanggan || "Pelanggan Tidak Diketahui"}</strong></td>
-                      <td style="font-size: 8px; color: #6b7280;">${sale.alamatPelanggan || "-"}</td>
+                      <td style="font-weight: 600; color: #147146;">${p.invoice || "-"}</td>
+                      <td>${p.noDO || "-"}</td>
+                      <td>${new Date(p.tanggal).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                      <td><strong>${p.namaSupplier}</strong></td>
                       <td>
                         ${
-                          sale.items && sale.items.length > 0
-                            ? `<ul class="products-list">${sale.items
+                          p.items && p.items.length > 0
+                            ? `<ul class="products-list">${p.items
                                 .map(
                                   (item) =>
-                                    `<li><strong>${item.namaProduk}</strong><br>${item.qty} ${item.satuan} × ${formatRupiah(item.hargaJual || 0)}</li>`,
+                                    `<li><strong style="text-center padding: 5px;">${item.namaProduk}</strong><br>${item.qty} ${item.satuan || ""} × ${formatRupiah(item.harga)}</li>`,
                                 )
                                 .join("")}</ul>`
                             : "<small style='color: #9ca3af;'>Tidak ada item</small>"
                         }
                       </td>
-                      <td class="text-right"><strong style="color: #147146; font-size: 10px;">${formatRupiah(sale.total)}</strong></td>
+                      <td class="text-right"><strong style="color: #147146; font-size: 10px;">${formatRupiah(p.total)}</strong></td>
                       <td class="text-center">
-                        <span class="${sale.status === "Lunas" ? "status-lunas" : "status-belum-lunas"}">
-                          ${sale.status}
+                        <span class="${p.status === "Lunas" ? "status-lunas" : "status-belum-lunas"}">
+                          ${p.status}
                         </span>
                       </td>
                     </tr>
@@ -458,27 +424,18 @@ export async function POST(request: NextRequest) {
                 </tbody>
               </table>
             </div>
-            
+
             <div class="totals-summary">
-                <div class="total-item">
-                    <span class="total-item-label">Subtotal:</span>
-                    <span class="total-item-value">${formatRupiah(penjualanBersih)}</span>
-                </div>
-                <div class="total-item">
-                    <span class="total-item-label">Total Pajak:</span>
-                    <span class="total-item-value">${formatRupiah(totalPajak)}</span>
-                </div>
                 <div class="total-item grand-total">
-                    <span class="total-item-label">Total Akhir:</span>
-                    <span class="total-item-value">${formatRupiah(totalRevenue)}</span>
+                    <span class="total-item-label">Total Biaya:</span>
+                    <span class="total-item-value">${formatRupiah(totalCost)}</span>
                 </div>
             </div>
 
             <div class="signature-section">
-                <div style="font-size: 10px; margin-bottom: 5px;">Mengetahui,<br>PT. Sumber Alam Pasangkayu</div>
-                  
+                <div style="font-size: 10px; margin-bottom: 5px;">Mengetahui,</div>
                 <div class="signature-line"></div>
-                <div class="signature-name">AM.Bisnis</div>
+                <div class="signature-name">PT. Sumber Alam Pasangkayu</div>
             </div>
           </div>
         </body>
@@ -502,7 +459,7 @@ export async function POST(request: NextRequest) {
     const headerTemplate = `
       <div style="
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        width: 100%; /* This is the full margin box width */
+        width: 100%;
         height: 100px;
         -webkit-print-color-adjust: exact;
         color: white;
@@ -510,14 +467,14 @@ export async function POST(request: NextRequest) {
         <div style="
           background-image: url('${gradientBg}');
           background-size: cover;
-          border-radius: 8px; /* Rounded corners */
-          margin: 0 auto; /* Center it */
-          width: 85%; /* Adjust width to match container's padding effect, considering PDF margins */
+          border-radius: 8px;
+          margin: 0 auto;
+          width: 85%;
           height: 100%;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 20px; /* Padding for inner content */
+          padding: 0 20px;
         ">
           <div style="display: flex; align-items: center; gap: 20px;">
             <img src="${logoSrc}" style="height: 55px; width: 55px; background: white; border-radius: 8px; padding: 6px;" />
@@ -552,7 +509,6 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    // Launch Puppeteer and generate PDF
     console.log("Launching Puppeteer...");
     const browser = await puppeteer.launch({
       headless: "new",
@@ -584,13 +540,11 @@ export async function POST(request: NextRequest) {
     await browser.close();
     console.log("PDF generated successfully");
 
-    // Return PDF as response
-    const filename =
-      "laporan_penjualan_" + new Date().toISOString().split("T")[0] + ".pdf";
+    const filename = `laporan_pembelian_${new Date().toISOString().split("T")[0]}.pdf`;
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": "attachment; filename=" + filename,
+        "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
   } catch (error) {

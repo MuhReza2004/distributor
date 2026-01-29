@@ -65,23 +65,61 @@ export const getAllPembelian = async (): Promise<Pembelian[]> => {
     const pembelianData = docSnap.data() as Pembelian;
     const pembelianId = docSnap.id;
 
+    // Fetch supplier name
+    let supplierData = null;
+    if (pembelianData.supplierId) {
+        try {
+            const supplierDoc = await getDoc(doc(db, "suppliers", pembelianData.supplierId));
+            if (supplierDoc.exists()) {
+                supplierData = supplierDoc.data();
+            }
+        } catch(e) {
+            console.error(`Could not fetch supplier: ${pembelianData.supplierId}`, e);
+        }
+    }
+
     // Fetch details
     const detailQuery = query(
       collection(db, "pembelian_detail"),
-      orderBy("supplierProdukId"),
+      where("pembelianId", "==", pembelianId),
     );
     const detailSnap = await getDocs(detailQuery);
-    const details = detailSnap.docs
-      .filter((d) => d.data().pembelianId === pembelianId)
-      .map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as PembelianDetail[];
+    const details: PembelianDetail[] = [];
+
+    for (const detailDoc of detailSnap.docs) {
+      const detailData = detailDoc.data();
+      const supplierProdukDoc = await getDoc(
+        doc(db, "supplier_produk", detailData.supplierProdukId),
+      );
+      const supplierProdukData = supplierProdukDoc.data();
+
+      if (supplierProdukData) {
+        const produkDoc = await getDoc(
+          doc(db, "produk", supplierProdukData.produkId),
+        );
+        const produkData = produkDoc.data();
+
+        details.push({
+          id: detailDoc.id,
+          ...detailData,
+          namaProduk: produkData?.nama || "Produk Tidak Ditemukan",
+          satuan: produkData?.satuan || "",
+        } as PembelianDetail);
+      } else {
+        details.push({
+          id: detailDoc.id,
+          ...detailData,
+          namaProduk: "Produk Tidak Ditemukan",
+          satuan: "",
+        } as PembelianDetail);
+      }
+    }
 
     pembelianList.push({
       id: pembelianId,
       ...pembelianData,
-      items: details, // Add items for compatibility
+      namaSupplier: supplierData?.nama || "Supplier Tidak Diketahui",
+      items: details,
     });
   }
 
