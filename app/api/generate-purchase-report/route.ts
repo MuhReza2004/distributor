@@ -357,33 +357,14 @@ export async function POST(request: NextRequest) {
               </span>
             </div>
 
-            <div class="summary-legend">
-                <div class="summary-item">
-                    <span class="summary-item-label">Total Pembelian</span>
-                    <span class="summary-item-value">${totalPurchases}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-item-label">Total Belanja</span>
-                    <span class="summary-item-value">${formatRupiah(totalCost)}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-item-label">Pembelian Lunas</span>
-                    <span class="summary-item-value">${paidPurchases}</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-item-label">Belum Lunas</span>
-                    <span class="summary-item-value">${unpaidPurchases}</span>
-                </div>
-            </div>
-
             <div class="table-container">
               <table>
                 <thead>
                   <tr>
                     <th class="text-center">No</th>
-                    <th>Invoice</th>
-                    <th>No. DO</th>
                     <th>Tanggal</th>
+                    <th>Invoice</th>
+                    <th>No. Pesanan</th>
                     <th>Supplier</th>
                     <th>Produk Dibeli</th>
                     <th class="text-right">Total</th>
@@ -396,9 +377,9 @@ export async function POST(request: NextRequest) {
                       (p, index) => `
                     <tr>
                       <td class="text-center">${index + 1}</td>
+                      <td>${new Date(p.tanggal).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
                       <td style="font-weight: 600; color: #147146;">${p.invoice || "-"}</td>
                       <td>${p.noDO || "-"}</td>
-                      <td>${new Date(p.tanggal).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</td>
                       <td><strong>${p.namaSupplier}</strong></td>
                       <td>
                         ${
@@ -434,9 +415,9 @@ export async function POST(request: NextRequest) {
             </div>
 
             <div class="signature-section">
-                <div style="font-size: 10px; margin-bottom: 5px;">Mengetahui,</div>
+                <div style="font-size: 10px; margin-bottom: 5px;">Mengetahui,<br>PT. Sumber Alam Pasangkayu</div>
                 <div class="signature-line"></div>
-                <div class="signature-name">PT. Sumber Alam Pasangkayu</div>
+                <div class="signature-name">AM.BISNIS</div>
             </div>
           </div>
         </body>
@@ -480,7 +461,7 @@ export async function POST(request: NextRequest) {
           <div style="display: flex; align-items: center; gap: 20px;">
             <img src="${logoSrc}" style="height: 55px; width: 55px; background: white; border-radius: 8px; padding: 6px;" />
             <div>
-              <h1 style="font-size: 18px; color: white; margin: 0 0 10px 0; font-weight: 700; letter-spacing: 0.5px;">Sumber Alam Pasangkayu</h1>
+              <h1 style="font-size: 18px; color: white; margin: 0 0 10px 0; font-weight: 700; letter-spacing: 0.5px;">PT. Sumber Alam Pasangkayu</h1>
               <div style="font-size: 9px; line-height: 1.7; color: white; opacity: 0.95;">
                 <div><strong style="display: inline-block; width: 45px;">Alamat</strong> : Jl. Soekarno Hatta Pasangkayu</div>
                 <div><strong style="display: inline-block; width: 45px;">Kontak</strong> : 0821-9030-9333</div>

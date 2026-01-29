@@ -99,7 +99,10 @@ export default function PembelianReportPage() {
   };
 
   const totalPurchases = filteredData.length;
-  const totalCost = filteredData.reduce((sum, purchase) => sum + purchase.total, 0);
+  const totalCost = filteredData.reduce(
+    (sum, purchase) => sum + purchase.total,
+    0,
+  );
   const paidPurchases = filteredData.filter(
     (purchase) => purchase.status === "Lunas",
   ).length;
@@ -135,7 +138,9 @@ export default function PembelianReportPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pembelian</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Pembelian
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalPurchases}</div>
@@ -151,18 +156,26 @@ export default function PembelianReportPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pembelian Lunas</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pembelian Lunas
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{paidPurchases}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {paidPurchases}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pembelian Belum Lunas</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pembelian Belum Lunas
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{unpaidPurchases}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {unpaidPurchases}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -170,17 +183,30 @@ export default function PembelianReportPage() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center"><Calendar className="w-5 h-5 mr-2" />Filter Periode</CardTitle>
+          <CardTitle className="flex items-center">
+            <Calendar className="w-5 h-5 mr-2" />
+            Filter Periode
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="startDate">Tanggal Mulai</Label>
-              <Input id="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="endDate">Tanggal Akhir</Label>
-              <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <Input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
           </div>
         </CardContent>
@@ -193,15 +219,18 @@ export default function PembelianReportPage() {
         </CardHeader>
         <CardContent>
           {filteredData.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">Tidak ada data pembelian untuk periode yang dipilih.</div>
+            <div className="text-center py-8 text-gray-500">
+              Tidak ada data pembelian untuk periode yang dipilih.
+            </div>
           ) : (
             <div className="rounded-lg border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>No</TableHead>
+                    <TableHead>Tanggal</TableHead>
                     <TableHead>No. Invoice</TableHead>
                     <TableHead>No. DO</TableHead>
-                    <TableHead>Tanggal</TableHead>
                     <TableHead>Supplier</TableHead>
                     <TableHead>Produk Dibeli</TableHead>
                     <TableHead className="text-right">Total</TableHead>
@@ -209,11 +238,16 @@ export default function PembelianReportPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredData.map((purchase) => (
+                  {filteredData.map((purchase, index) => (
                     <TableRow key={purchase.id}>
-                      <TableCell className="font-medium">{purchase.invoice || "-"}</TableCell>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell>
+                        {new Date(purchase.tanggal).toLocaleDateString("id-ID")}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {purchase.invoice || "-"}
+                      </TableCell>
                       <TableCell>{purchase.noDO || "-"}</TableCell>
-                      <TableCell>{new Date(purchase.tanggal).toLocaleDateString("id-ID")}</TableCell>
                       <TableCell>{purchase.namaSupplier}</TableCell>
                       <TableCell>
                         {purchase.items && purchase.items.length > 0 ? (
@@ -231,9 +265,19 @@ export default function PembelianReportPage() {
                           </p>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">{formatRupiah(purchase.total)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatRupiah(purchase.total)}
+                      </TableCell>
                       <TableCell className="text-center">
-                        <Badge className={purchase.status === "Lunas" ? "bg-green-600" : "bg-red-600"}>{purchase.status}</Badge>
+                        <Badge
+                          className={
+                            purchase.status === "Lunas"
+                              ? "bg-green-600"
+                              : "bg-red-600"
+                          }
+                        >
+                          {purchase.status}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}
