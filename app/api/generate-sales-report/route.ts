@@ -129,6 +129,11 @@ export async function POST(request: NextRequest) {
       (sum, sale) => sum + sale.total,
       0,
     );
+    const totalPajak = filteredSales.reduce(
+        (sum, sale) => sum + (sale.pajak || 0),
+        0,
+    );
+    const penjualanBersih = totalRevenue - totalPajak;
     const paidSales = filteredSales.filter(
       (sale) => sale.status === "Lunas",
     ).length;
@@ -192,7 +197,7 @@ export async function POST(request: NextRequest) {
 
             .summary {
               display: grid;
-              grid-template-columns: repeat(4, 1fr);
+              grid-template-columns: repeat(3, 1fr);
               gap: 15px;
               padding: 0 30px;
               margin-bottom: 30px;
@@ -359,8 +364,18 @@ export async function POST(request: NextRequest) {
               </div>
               <div class="summary-card revenue">
                 <div class="icon">💰</div>
-                <h3>Total Pendapatan</h3>
+                <h3>Pendapatan Bruto</h3>
                 <p>${formatRupiah(totalRevenue)}</p>
+              </div>
+              <div class="summary-card">
+                <div class="icon">🧾</div>
+                <h3>Total Pajak (PPN)</h3>
+                <p>${formatRupiah(totalPajak)}</p>
+              </div>
+              <div class="summary-card">
+                <div class="icon">💼</div>
+                <h3>Pendapatan Netto</h3>
+                <p>${formatRupiah(penjualanBersih)}</p>
               </div>
               <div class="summary-card paid">
                 <div class="icon">✅</div>
@@ -430,6 +445,20 @@ export async function POST(request: NextRequest) {
       </html>
     `;
 
+    // Create a base64 SVG for the gradient background
+    const svgGradient = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#10B981;" />
+            <stop offset="100%" style="stop-color:#0D9488;" />
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grad)" />
+      </svg>
+    `;
+    const gradientBg = `data:image/svg+xml;base64,${Buffer.from(svgGradient).toString("base64")}`;
+
     const headerTemplate = `
       <div style="
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -438,17 +467,20 @@ export async function POST(request: NextRequest) {
         align-items: center;
         justify-content: space-between;
         padding: 0 20px;
-        border-bottom: 2px solid #147146;
         height: 100px;
+        background-image: url('${gradientBg}');
+        background-size: cover;
+        -webkit-print-color-adjust: exact; /* Force background rendering */
+        color: white;
       ">
         <div style="display: flex; align-items: center; gap: 15px;">
           <img src="${logoSrc}" style="height: 50px; width: 50px;" />
           <div>
-            <h1 style="font-size: 18px; color: #147146; margin: 0; font-weight: 700;">Sumber Alam Pasangkayu</h1>
-            <p style="margin: 3px 0 0 0; font-size: 10px; color: #6b7280;">Laporan Penjualan</p>
+            <h1 style="font-size: 18px; color: white; margin: 0; font-weight: 700;">Sumber Alam Pasangkayu</h1>
+            <p style="margin: 3px 0 0 0; font-size: 10px; color: white;">Laporan Penjualan</p>
           </div>
         </div>
-        <div style="font-size: 10px; color: #6b7280;">
+        <div style="font-size: 10px; color: white;">
           Tanggal Cetak: ${new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
         </div>
       </div>
@@ -505,7 +537,7 @@ export async function POST(request: NextRequest) {
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": "inline; filename=" + filename,
+        "Content-Disposition": "attachment; filename=" + filename,
       },
     });
   } catch (error) {

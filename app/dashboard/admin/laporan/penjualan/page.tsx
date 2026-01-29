@@ -402,6 +402,11 @@ export default function PenjualanReportPage() {
 
   const totalSales = filteredData.length;
   const totalRevenue = filteredData.reduce((sum, sale) => sum + sale.total, 0);
+  const totalPajak = filteredData.reduce(
+    (sum, sale) => sum + (sale.pajak || 0),
+    0,
+  );
+  const penjualanBersih = totalRevenue - totalPajak;
   const paidSales = filteredData.filter(
     (sale) => sale.status === "Lunas",
   ).length;
@@ -442,7 +447,7 @@ export default function PenjualanReportPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -456,12 +461,32 @@ export default function PenjualanReportPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Pendapatan
+              Total Pendapatan (Bruto)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {formatRupiah(totalRevenue)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Pajak</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatRupiah(totalPajak)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Penjualan Bersih (Netto)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatRupiah(penjualanBersih)}
             </div>
           </CardContent>
         </Card>
