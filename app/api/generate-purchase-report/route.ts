@@ -409,7 +409,7 @@ export async function POST(request: NextRequest) {
 
             <div class="totals-summary">
                 <div class="total-item grand-total">
-                    <span class="total-item-label">Total Biaya:</span>
+                    <span class="total-item-label">Total Belanja:</span>
                     <span class="total-item-value">${formatRupiah(totalCost)}</span>
                 </div>
             </div>
