@@ -274,7 +274,8 @@ export async function POST(request: NextRequest) {
             }
             
             .text-center { 
-              text-align: center; 
+              text-align: center;
+              vertical-align: middle;
             }
 
             .products-list {
@@ -411,7 +412,7 @@ export async function POST(request: NextRequest) {
                             : "<small style='color: #9ca3af;'>Tidak ada item</small>"
                         }
                       </td>
-                      <td class="text-right"><strong style="color: #147146; font-size: 10px;">${formatRupiah(p.total)}</strong></td>
+                      <td class="text-center"><strong style="color: #147146; font-size: 10px;">${formatRupiah(p.total)}</strong></td>
                       <td class="text-center">
                         <span class="${p.status === "Lunas" ? "status-lunas" : "status-belum-lunas"}">
                           ${p.status}
