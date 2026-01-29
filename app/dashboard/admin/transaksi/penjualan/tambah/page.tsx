@@ -398,7 +398,7 @@ export default function TambahPenjualanPage() {
             <div className="lg:col-span-2 space-y-6">
               {/* Invoice Information Card */}
               <Card className="overflow-hidden border-none shadow-lg bg-white/80 backdrop-blur-sm">
-                <div className="bg-gradient-to-r from-slate-700 to-slate-900 p-6 text-white">
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-white/10 backdrop-blur-sm rounded-lg">
                       <FileText className="h-5 w-5" />
@@ -453,7 +453,7 @@ export default function TambahPenjualanPage() {
 
               {/* Customer & Transaction Details */}
               <Card className="overflow-hidden border-none shadow-lg bg-white/80 backdrop-blur-sm">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-white/10 backdrop-blur-sm rounded-lg">
                       <User className="h-5 w-5" />
@@ -887,7 +887,7 @@ export default function TambahPenjualanPage() {
               {/* Customer Info Card */}
               {selectedPelanggan && (
                 <Card className="overflow-hidden border-none shadow-lg  top-6">
-                  <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-4 text-white">
+                  <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
                     <div className="flex items-center gap-2">
                       <UserCircle className="h-5 w-5" />
                       <h4 className="font-semibold">Info Pelanggan</h4>
@@ -926,7 +926,7 @@ export default function TambahPenjualanPage() {
 
               {/* Calculation Summary */}
               <Card className="overflow-hidden border-none shadow-lg  top-6">
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-4 text-white">
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-4 text-white">
                   <div className="flex items-center gap-2">
                     <Calculator className="h-5 w-5" />
                     <h4 className="font-semibold">Ringkasan Pembayaran</h4>

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatRupiah } from "@/helper/format";
-import { Download, Eye, Calendar } from "lucide-react";
+import { Download, Eye, Calendar, FileText } from "lucide-react";
 import * as ExcelJS from "exceljs";
 import {
   Table,
@@ -72,6 +72,46 @@ export default function PenjualanReportPage() {
   const handleViewDetails = (penjualan: Penjualan) => {
     setSelectedPenjualan(penjualan);
     setDialogDetailOpen(true);
+  };
+
+  const exportToPDF = async () => {
+    // Open a new tab immediately and show a loading message.
+    const newTab = window.open("", "_blank");
+    if (!newTab) {
+      alert("Gagal membuka tab baru. Mohon izinkan pop-up untuk situs ini.");
+      return;
+    }
+    newTab.document.write("Menghasilkan laporan PDF, mohon tunggu...");
+
+    try {
+      const response = await fetch("/api/generate-sales-report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          startDate: startDate || null,
+          endDate: endDate || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Load the PDF into the already-opened tab.
+      newTab.location.href = url;
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      // If an error occurs, show it in the new tab and alert the user.
+      if (newTab) {
+        newTab.document.body.innerHTML = `<pre>Gagal membuat PDF. Silakan periksa konsol untuk detailnya.</pre>`;
+      }
+      alert("Gagal mengekspor laporan PDF. Silakan coba lagi.");
+    }
   };
 
   const exportToExcel = async () => {
@@ -389,10 +429,16 @@ export default function PenjualanReportPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Laporan Penjualan</h1>
-        <Button onClick={exportToExcel} variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          Export Excel
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={exportToPDF} variant="outline">
+            <FileText className="w-4 h-4 mr-2" />
+            Export PDF
+          </Button>
+          <Button onClick={exportToExcel} variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Export Excel
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
