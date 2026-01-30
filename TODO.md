@@ -1,11 +1,14 @@
-# TODO: Implement Purchase Report Feature
+# TODO: Implement Piutang Feature
 
-## Steps to Complete
+## Current Status
 
-- [ ] Adapt the sales report code to create a purchase report page
-- [ ] Change imports to use Pembelian types and services
-- [ ] Update summary cards for purchase metrics (Total Pembelian, Total Pengeluaran, etc.)
-- [ ] Modify table columns for purchase data (Invoice, No DO, No NPB, Supplier, etc.)
-- [ ] Adjust Excel export functionality for purchase reports
-- [ ] Fetch and display supplier names in the report
-- [ ] Test the purchase report page functionality
+- Services: getPiutang and addPiutangPayment functions added to penjualan.service.ts
+- Components: PiutangTable.tsx and DialogBayarPiutang.tsx created
+- Page: app/dashboard/admin/transaksi/piutang/page.tsx updated to fetch and display piutang data
+
+## Remaining Tasks
+
+- [x] Update app/dashboard/admin/transaksi/piutang/page.tsx to fetch and display piutang data
+- [x] Add state management for piutang data and refresh on payment success
+- [ ] Ensure Firebase index is created for the query (status == "Belum Lunas", orderBy createdAt desc)
+- [ ] Test the payment flow and status update logic

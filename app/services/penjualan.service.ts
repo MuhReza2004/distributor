@@ -10,11 +10,18 @@ import {
   query,
   runTransaction,
   where,
+  serverTimestamp,
+  arrayUnion,
 } from "firebase/firestore";
-import { Penjualan, PenjualanDetail } from "@/app/types/penjualan";
+import {
+  Penjualan,
+  PenjualanDetail,
+  RiwayatPembayaran,
+} from "@/app/types/penjualan";
 import { db } from "../lib/firebase";
 import { Produk } from "@/app/types/produk";
 
+// --- existing createPenjualan function ---
 export const createPenjualan = async (data: Penjualan) => {
   // Use a transaction to ensure stock validation and updates are atomic
   await runTransaction(db, async (transaction) => {
@@ -41,7 +48,7 @@ export const createPenjualan = async (data: Penjualan) => {
 
     // 2. If all validations pass, create the sale and update stock
     const penjualanRef = doc(collection(db, "penjualan")); // Create a new doc ref
-    const penjualanData = { ...data };
+    const penjualanData = { ...data, totalDibayar: 0, riwayatPembayaran: [] }; // Initialize payment fields
     delete penjualanData.items; // Remove items from main document
     transaction.set(penjualanRef, { ...penjualanData, createdAt: new Date() });
 
@@ -68,6 +75,7 @@ export const createPenjualan = async (data: Penjualan) => {
   });
 };
 
+// --- existing getAllPenjualan function ---
 export const getAllPenjualan = async (): Promise<Penjualan[]> => {
   const q = query(collection(db, "penjualan"), orderBy("createdAt", "desc"));
   const snap = await getDocs(q);
@@ -150,6 +158,103 @@ export const getAllPenjualan = async (): Promise<Penjualan[]> => {
   return penjualanList;
 };
 
+// --- NEW getPiutang function ---
+export const getPiutang = async (): Promise<Penjualan[]> => {
+  const q = query(
+    collection(db, "penjualan"),
+    where("status", "==", "Belum Lunas"),
+    orderBy("createdAt", "desc"),
+  );
+  const snap = await getDocs(q);
+
+  const piutangList: Penjualan[] = [];
+
+  for (const docSnap of snap.docs) {
+    const penjualanData = docSnap.data() as Penjualan;
+    const penjualanId = docSnap.id;
+
+    // Fetch pelanggan name
+    let pelangganData = null;
+    try {
+      const pelangganDoc = await getDoc(
+        doc(db, "pelanggan", penjualanData.pelangganId),
+      );
+      if (pelangganDoc.exists()) {
+        pelangganData = pelangganDoc.data();
+      }
+    } catch (error) {
+      console.error(
+        "Could not fetch customer, maybe ID is not a doc ID:",
+        error,
+      );
+      // Fallback: search by idPelanggan field
+      const pelangganQuery = query(
+        collection(db, "pelanggan"),
+        where("idPelanggan", "==", penjualanData.pelangganId),
+      );
+      const pelangganSnap = await getDocs(pelangganQuery);
+      if (!pelangganSnap.empty) {
+        pelangganData = pelangganSnap.docs[0].data();
+      }
+    }
+
+    piutangList.push({
+      id: penjualanId,
+      ...penjualanData,
+      namaPelanggan:
+        pelangganData?.namaPelanggan || "Pelanggan tidak ditemukan",
+    });
+  }
+
+  return piutangList;
+};
+
+// --- NEW addPiutangPayment function ---
+export const addPiutangPayment = async (
+  penjualanId: string,
+  payment: {
+    tanggal: string;
+    jumlah: number;
+    metodePembayaran: string;
+    atasNama: string;
+  },
+): Promise<void> => {
+  const penjualanRef = doc(db, "penjualan", penjualanId);
+
+  await runTransaction(db, async (transaction) => {
+    const penjualanDoc = await transaction.get(penjualanRef);
+    if (!penjualanDoc.exists()) {
+      throw new Error("Transaksi penjualan tidak ditemukan.");
+    }
+
+    const penjualanData = penjualanDoc.data() as Penjualan;
+
+    const currentTotalDibayar = penjualanData.totalDibayar || 0;
+    const newTotalDibayar = currentTotalDibayar + payment.jumlah;
+    const sisaUtang = penjualanData.total - newTotalDibayar;
+
+    const newStatus = sisaUtang <= 0 ? "Lunas" : "Belum Lunas";
+
+    const newPaymentRecord: RiwayatPembayaran = {
+      ...payment,
+      createdAt: new Date(),
+    };
+
+    // Firestore transactions recommend reading all data first, then writing.
+    // We get the existing array, push the new record, then update.
+    const currentRiwayat = penjualanData.riwayatPembayaran || [];
+    const newRiwayat = [...currentRiwayat, newPaymentRecord];
+
+    transaction.update(penjualanRef, {
+      totalDibayar: newTotalDibayar,
+      status: newStatus,
+      riwayatPembayaran: newRiwayat,
+      updatedAt: new Date(),
+    });
+  });
+};
+
+// --- existing updatePenjualanStatus function ---
 export const updatePenjualanStatus = async (
   id: string,
   status: "Lunas" | "Belum Lunas",
@@ -158,6 +263,7 @@ export const updatePenjualanStatus = async (
   await updateDoc(penjualanRef, { status });
 };
 
+// --- existing updatePenjualan function ---
 export const updatePenjualan = async (id: string, data: Partial<Penjualan>) => {
   // Use a transaction to handle stock updates when editing
   await runTransaction(db, async (transaction) => {
@@ -236,6 +342,7 @@ export const updatePenjualan = async (id: string, data: Partial<Penjualan>) => {
   });
 };
 
+// --- existing deletePenjualan function ---
 export const deletePenjualan = async (id: string) => {
   // Use a transaction to restore stock when deleting
   await runTransaction(db, async (transaction) => {
@@ -265,6 +372,7 @@ export const deletePenjualan = async (id: string) => {
   });
 };
 
+// --- existing generateInvoiceNumber function ---
 export const generateInvoiceNumber = async (): Promise<string> => {
   const counterRef = doc(db, "counters", "penjualan");
 
@@ -289,6 +397,7 @@ export const generateInvoiceNumber = async (): Promise<string> => {
   return `INV/${year}${month}${day}/${String(next).padStart(4, "0")}`;
 };
 
+// --- existing generateSuratJalanNumber function ---
 export const generateSuratJalanNumber = async (): Promise<string> => {
   const counterRef = doc(db, "counters", "suratJalan");
 

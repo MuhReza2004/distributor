@@ -16,7 +16,7 @@ export const dashboardMenus: MenuItem[] = [
   // },
   {
     label: "Master Menu",
-    href: "/dashboard/admin/transaksi",
+    href: "/dashboard/admin/master",
     roles: ["admin"],
     children: [
       {
@@ -59,6 +59,11 @@ export const dashboardMenus: MenuItem[] = [
       {
         label: "Penjualan",
         href: "/dashboard/admin/transaksi/penjualan",
+        roles: ["admin"],
+      },
+      {
+        label: "Piutang",
+        href: "/dashboard/admin/transaksi/piutang ",
         roles: ["admin"],
       },
     ],
