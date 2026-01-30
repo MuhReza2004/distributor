@@ -13,7 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { formatRupiah, formatTanggal } from "@/helper/format";
+import { exportPiutangDetailToPDF } from "@/helper/pdfExport";
+import { FileText } from "lucide-react";
 
 interface DialogDetailPiutangProps {
   isOpen: boolean;
@@ -28,13 +31,28 @@ export default function DialogDetailPiutang({
 }: DialogDetailPiutangProps) {
   if (!piutang) return null;
 
+  const handleExportPDF = () => {
+    exportPiutangDetailToPDF(piutang);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-gray-800">
-            Detail Piutang - {piutang.noInvoice}
-          </DialogTitle>
+          <div className="flex justify-between items-center">
+            <DialogTitle className="text-2xl font-bold text-gray-800">
+              Detail Piutang - {piutang.noInvoice}
+            </DialogTitle>
+            <Button
+              onClick={handleExportPDF}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Export PDF
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">

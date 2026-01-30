@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { Penjualan } from "@/app/types/penjualan";
 import { getPiutang } from "@/app/services/penjualan.service"; // Will be created
-import PiutangTable from "./PiutangTable";
+import PiutangTable from "../../../../../components/Piutang/PiutangTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+// Komponen untuk menampilkan halaman daftar piutang
 
 export default function PiutangPage() {
   const [piutang, setPiutang] = useState<Penjualan[]>([]);

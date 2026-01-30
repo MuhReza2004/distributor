@@ -13,6 +13,8 @@ import DialogBayarPiutang from "./DialogBayarPiutang";
 import { Button } from "@/components/ui/button";
 import { formatRupiah, formatTanggal } from "@/helper/format";
 import DialogDetailPiutang from "./DialogDetailPiutang";
+import { exportPiutangTableToPDF } from "@/helper/pdfExport";
+import { FileText } from "lucide-react";
 
 interface PiutangTableProps {
   piutang: Penjualan[];
@@ -20,7 +22,7 @@ interface PiutangTableProps {
 }
 
 export default function PiutangTable({
-  piutang,
+  piutang = [],
   onPaymentSuccess,
 }: PiutangTableProps) {
   const [selectedPiutang, setSelectedPiutang] = useState<Penjualan | null>(
@@ -56,8 +58,23 @@ export default function PiutangTable({
     onPaymentSuccess(); // Refresh data on the main page
   };
 
+  const handleExportPDF = () => {
+    exportPiutangTableToPDF(piutang);
+  };
+
   return (
     <>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Daftar Piutang</h2>
+        <Button
+          onClick={handleExportPDF}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <FileText className="w-4 h-4" />
+          Export PDF
+        </Button>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -72,7 +89,7 @@ export default function PiutangTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {piutang.map((p) => {
+          {(piutang || []).map((p) => {
             const totalDibayar = p.totalDibayar || 0;
             const sisaUtang = p.total - totalDibayar;
             return (
