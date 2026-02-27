@@ -79,14 +79,34 @@ export default function PenjualanReportPage() {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Laporan Penjualan");
 
+      // Set column widths
+      worksheet.columns = [
+        { width: 5 }, // No
+        { width: 18 }, // Invoice
+        { width: 18 }, // Surat Jalan
+        { width: 15 }, // Tanggal
+        { width: 25 }, // Pelanggan
+        { width: 35 }, // Alamat
+        { width: 45 }, // Produk Dibeli
+        { width: 18 }, // Total
+        { width: 15 }, // Status
+      ];
+
       // Add title
-      worksheet.mergeCells("A1:H1");
-      worksheet.getCell("A1").value = "Laporan Penjualan";
-      worksheet.getCell("A1").font = { size: 16, bold: true };
-      worksheet.getCell("A1").alignment = { horizontal: "center" };
+      worksheet.mergeCells("A1:I1");
+      const titleCell = worksheet.getCell("A1");
+      titleCell.value = "LAPORAN PENJUALAN";
+      titleCell.font = { size: 18, bold: true, color: { argb: "FF1F2937" } };
+      titleCell.alignment = { horizontal: "center", vertical: "middle" };
+      titleCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE5E7EB" },
+      };
+      worksheet.getRow(1).height = 30;
 
       // Add period info
-      worksheet.mergeCells("A2:H2");
+      worksheet.mergeCells("A2:I2");
       const periodText =
         startDate && endDate
           ? `Periode: ${new Date(startDate).toLocaleDateString("id-ID")} - ${new Date(endDate).toLocaleDateString("id-ID")}`
@@ -95,18 +115,94 @@ export default function PenjualanReportPage() {
             : endDate
               ? `Sampai: ${new Date(endDate).toLocaleDateString("id-ID")}`
               : "Semua Periode";
-      worksheet.getCell("A2").value = periodText;
-      worksheet.getCell("A2").alignment = { horizontal: "center" };
+      const periodCell = worksheet.getCell("A2");
+      periodCell.value = periodText;
+      periodCell.font = { size: 11, italic: true };
+      periodCell.alignment = { horizontal: "center", vertical: "middle" };
+      worksheet.getRow(2).height = 20;
 
-      // Add summary
-      worksheet.getCell("A4").value = "Total Penjualan";
-      worksheet.getCell("B4").value = totalSales;
-      worksheet.getCell("A5").value = "Total Pendapatan";
-      worksheet.getCell("B5").value = totalRevenue;
-      worksheet.getCell("A6").value = "Penjualan Lunas";
-      worksheet.getCell("B6").value = paidSales;
-      worksheet.getCell("A7").value = "Penjualan Belum Lunas";
-      worksheet.getCell("B7").value = unpaidSales;
+      // Add spacing
+      worksheet.getRow(3).height = 5;
+
+      // Add summary section with better styling
+      const summaryStartRow = 4;
+
+      // Summary title
+      worksheet.mergeCells(`A${summaryStartRow}:B${summaryStartRow}`);
+      const summaryTitleCell = worksheet.getCell(`A${summaryStartRow}`);
+      summaryTitleCell.value = "RINGKASAN";
+      summaryTitleCell.font = {
+        size: 12,
+        bold: true,
+        color: { argb: "FFFFFFFF" },
+      };
+      summaryTitleCell.alignment = { horizontal: "center", vertical: "middle" };
+      summaryTitleCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF3B82F6" },
+      };
+      summaryTitleCell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      worksheet.getRow(summaryStartRow).height = 25;
+
+      // Summary data
+      const summaryData = [
+        { label: "Total Penjualan", value: totalSales, format: "number" },
+        { label: "Total Pendapatan", value: totalRevenue, format: "currency" },
+        { label: "Penjualan Lunas", value: paidSales, format: "number" },
+        {
+          label: "Penjualan Belum Lunas",
+          value: unpaidSales,
+          format: "number",
+        },
+      ];
+
+      summaryData.forEach((item, index) => {
+        const rowNum = summaryStartRow + 1 + index;
+        const labelCell = worksheet.getCell(`A${rowNum}`);
+        const valueCell = worksheet.getCell(`B${rowNum}`);
+
+        labelCell.value = item.label;
+        labelCell.font = { bold: true, size: 11 };
+        labelCell.alignment = { horizontal: "left", vertical: "middle" };
+        labelCell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF3F4F6" },
+        };
+        labelCell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+
+        if (item.format === "currency") {
+          valueCell.value = item.value;
+          valueCell.numFmt = '"Rp" #,##0';
+        } else {
+          valueCell.value = item.value;
+        }
+        valueCell.font = { size: 11 };
+        valueCell.alignment = { horizontal: "right", vertical: "middle" };
+        valueCell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+
+        worksheet.getRow(rowNum).height = 20;
+      });
+
+      // Add spacing
+      const dataStartRow = summaryStartRow + summaryData.length + 2;
+      worksheet.getRow(dataStartRow - 1).height = 5;
 
       // Add headers
       const headers = [
@@ -120,19 +216,28 @@ export default function PenjualanReportPage() {
         "Total",
         "Status",
       ];
-      worksheet.addRow([]);
-      worksheet.addRow(headers);
 
-      // Style headers
-      const headerRow = worksheet.getRow(worksheet.rowCount);
-      headerRow.font = { bold: true };
-      headerRow.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFE6E6FA" },
-      };
+      const headerRow = worksheet.getRow(dataStartRow);
+      headers.forEach((header, index) => {
+        const cell = headerRow.getCell(index + 1);
+        cell.value = header;
+        cell.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF1F2937" },
+        };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+      });
+      headerRow.height = 25;
 
-      // Add data
+      // Add data with alternating row colors
       filteredData.forEach((penjualan, index) => {
         const produkDibeli =
           penjualan.items && penjualan.items.length > 0
@@ -144,30 +249,97 @@ export default function PenjualanReportPage() {
                 .join("\n")
             : "Tidak ada item";
 
-        const row = [
+        const rowData = [
           index + 1,
           penjualan.noInvoice,
           penjualan.noSuratJalan,
           new Date(penjualan.tanggal).toLocaleDateString("id-ID"),
           penjualan.namaPelanggan || "Pelanggan Tidak Diketahui",
-          penjualan.alamatPelanggan || "",
+          penjualan.alamatPelanggan || "-",
           produkDibeli,
           penjualan.total,
           penjualan.status,
         ];
-        worksheet.addRow(row);
+
+        const row = worksheet.addRow(rowData);
+        row.height = 30;
+
+        // Apply alternating row colors
+        const fillColor = index % 2 === 0 ? "FFFFFFFF" : "FFF9FAFB";
+
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          // Alignment
+          if (colNumber === 1 || colNumber === 8 || colNumber === 9) {
+            cell.alignment = { horizontal: "center", vertical: "middle" };
+          } else if (colNumber === 7) {
+            cell.alignment = {
+              horizontal: "left",
+              vertical: "top",
+              wrapText: true,
+            };
+          } else {
+            cell.alignment = { horizontal: "left", vertical: "middle" };
+          }
+
+          // Fill color
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: fillColor },
+          };
+
+          // Border
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFE5E7EB" } },
+            left: { style: "thin", color: { argb: "FFE5E7EB" } },
+            bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
+            right: { style: "thin", color: { argb: "FFE5E7EB" } },
+          };
+
+          // Font
+          cell.font = { size: 10 };
+
+          // Format currency
+          if (colNumber === 8) {
+            cell.numFmt = '"Rp" #,##0';
+          }
+
+          // Status styling
+          if (colNumber === 9) {
+            cell.font = { bold: true, size: 10 };
+            if (cell.value === "Lunas") {
+              cell.font = { ...cell.font, color: { argb: "FF16A34A" } };
+            } else if (cell.value === "Belum Lunas") {
+              cell.font = { ...cell.font, color: { argb: "FFDC2626" } };
+            }
+          }
+        });
       });
 
-      // Auto-fit columns
-      worksheet.columns.forEach((column) => {
-        column.width = 15;
-      });
-      worksheet.getColumn(5).width = 25; // Pelanggan
-      worksheet.getColumn(6).width = 30; // Alamat
-      worksheet.getColumn(7).width = 40; // Produk Dibeli
+      // Add footer
+      const lastRow = worksheet.rowCount + 2;
+      worksheet.mergeCells(`A${lastRow}:I${lastRow}`);
+      const footerCell = worksheet.getCell(`A${lastRow}`);
+      footerCell.value = `Dicetak pada: ${new Date().toLocaleString("id-ID")}`;
+      footerCell.font = { size: 9, italic: true, color: { argb: "FF6B7280" } };
+      footerCell.alignment = { horizontal: "center", vertical: "middle" };
 
-      // Format currency column
-      worksheet.getColumn(8).numFmt = '"Rp" #,##0';
+      // Set print options
+      worksheet.pageSetup = {
+        paperSize: 9, // A4
+        orientation: "landscape",
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 0,
+        margins: {
+          left: 0.5,
+          right: 0.5,
+          top: 0.75,
+          bottom: 0.75,
+          header: 0.3,
+          footer: 0.3,
+        },
+      };
 
       // Generate file
       const buffer = await workbook.xlsx.writeBuffer();
@@ -303,8 +475,12 @@ export default function PenjualanReportPage() {
 
       {/* Sales Table */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row justify-between ">
           <CardTitle>Detail Penjualan</CardTitle>
+          <Button onClick={exportToExcel} variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Export Excel
+          </Button>
         </CardHeader>
         <CardContent>
           {filteredData.length === 0 ? (
